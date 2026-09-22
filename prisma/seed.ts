@@ -181,7 +181,10 @@ async function main() {
   console.log(`✅ Created ${ticketData.length} sample tickets`);
 
   console.log("\n🎉 Seed complete!");
-  console.log("   Login credentials (all users): password = Password123");
+  if (adminEmail) {
+    console.log(`   Super Admin: ${adminEmail} (password: ${adminPassword})`);
+  }
+  console.log("   Test User Login credentials: password = Password123");
   console.log("   alice@projectflow.dev (Project Owner)");
   console.log("   bob@projectflow.dev (Member)");
   console.log("   carol@projectflow.dev (Member)");
