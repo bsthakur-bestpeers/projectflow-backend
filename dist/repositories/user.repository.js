@@ -120,5 +120,37 @@ exports.userRepository = {
             },
         });
     },
+    async updateProfile(id, data) {
+        return prisma_1.default.user.update({
+            where: { id },
+            data,
+            select: {
+                id: true,
+                full_name: true,
+                email: true,
+                role: true,
+                approval_status: true,
+                is_active: true,
+                created_at: true,
+                updated_at: true,
+            },
+        });
+    },
+    async findByResetToken(token) {
+        return prisma_1.default.user.findFirst({
+            where: {
+                reset_token: token,
+                reset_token_expires: {
+                    gt: new Date(),
+                },
+            },
+        });
+    },
+    async updateResetToken(id, reset_token, reset_token_expires) {
+        return prisma_1.default.user.update({
+            where: { id },
+            data: { reset_token, reset_token_expires },
+        });
+    },
 };
 //# sourceMappingURL=user.repository.js.map

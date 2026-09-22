@@ -14,20 +14,27 @@ const ticket_routes_1 = __importDefault(require("./routes/ticket.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const search_routes_1 = __importDefault(require("./routes/search.routes"));
 const admin_routes_1 = __importDefault(require("./routes/admin.routes"));
+const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
 const error_middleware_1 = require("./middleware/error.middleware");
 const app_constants_1 = require("./constants/app.constants");
 const app = (0, express_1.default)();
+// Trust proxy for rate limiters on Render
+app.set("trust proxy", 1);
 // Security headers
 app.use((0, helmet_1.default)());
 // CORS
 app.use((0, cors_1.default)({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(',').map(o => o.trim().replace(/\/$/, ""))
+        : [],
     credentials: true,
 }));
 // Body parsing
 app.use(express_1.default.json({ limit: "2mb" }));
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
+// Serve static uploads
+app.use("/uploads", express_1.default.static("uploads"));
 // Health check with version info
 app.get("/health", (_, res) => {
     res.json({
@@ -47,6 +54,7 @@ v1Router.use("/sprints", sprint_routes_1.default);
 v1Router.use("/tickets", ticket_routes_1.default);
 v1Router.use("/search", search_routes_1.default);
 v1Router.use("/admin", admin_routes_1.default);
+v1Router.use("/uploads", upload_routes_1.default);
 // Mount versioned v1 routes
 app.use("/api/v1", v1Router);
 // 404 handler

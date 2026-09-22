@@ -21,10 +21,9 @@ exports.createTicketValidator = [
         .isIn(app_constants_1.ESTIMATION_OPTIONS)
         .withMessage(`Estimation must be one of: ${app_constants_1.ESTIMATION_OPTIONS.join(", ")}`),
     (0, express_validator_1.body)("sprintId")
-        .notEmpty()
-        .withMessage("Sprint ID is required to create a ticket")
-        .isInt({ min: 1 })
-        .withMessage("Sprint ID must be a positive integer"),
+        .optional({ nullable: true })
+        .custom((value) => value === null || (Number.isInteger(value) && value > 0))
+        .withMessage("Sprint ID must be a positive integer or null"),
     (0, express_validator_1.body)("assigneeId")
         .optional({ nullable: true })
         .isInt({ min: 1 })

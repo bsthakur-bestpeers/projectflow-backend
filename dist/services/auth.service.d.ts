@@ -32,5 +32,7 @@ export declare const authService: {
         created_at: Date;
         updated_at: Date;
     }>;
+    forgotPassword(email: string): Promise<void>;
+    resetPassword(token: string, newPassword: string): Promise<void>;
 };
 //# sourceMappingURL=auth.service.d.ts.map

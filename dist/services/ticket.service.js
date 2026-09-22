@@ -60,13 +60,12 @@ exports.ticketService = {
                 }
             }
         }
-        // Validate sprint is required and belongs to this project
-        if (!data.sprint_id) {
-            throw (0, error_middleware_1.createError)("A sprint must be assigned to create a ticket.", 400);
-        }
-        const sprint = await sprint_repository_1.sprintRepository.findById(data.sprint_id);
-        if (!sprint || sprint.project_id !== projectId) {
-            throw (0, error_middleware_1.createError)("Sprint does not belong to this project.", 400);
+        // Validate sprint belongs to this project if provided
+        if (data.sprint_id !== undefined && data.sprint_id !== null) {
+            const sprint = await sprint_repository_1.sprintRepository.findById(data.sprint_id);
+            if (!sprint || sprint.project_id !== projectId) {
+                throw (0, error_middleware_1.createError)("Sprint does not belong to this project.", 400);
+            }
         }
         const description = data.description ? sanitizeDescription(data.description) : undefined;
         return ticket_repository_1.ticketRepository.create({ ...data, description, project_id: projectId, author_id: authorId });

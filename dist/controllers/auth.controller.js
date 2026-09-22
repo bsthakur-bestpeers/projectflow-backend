@@ -6,7 +6,7 @@ const app_constants_1 = require("../constants/app.constants");
 const COOKIE_OPTIONS = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax"),
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 exports.authController = {
@@ -43,6 +43,29 @@ exports.authController = {
     async logout(req, res) {
         res.clearCookie(app_constants_1.JWT_COOKIE_NAME);
         res.json({ success: true, message: "Logged out successfully." });
+    },
+    async forgotPassword(req, res, next) {
+        try {
+            const { email } = req.body;
+            await auth_service_1.authService.forgotPassword(email);
+            res.json({
+                success: true,
+                message: "If an account with that email exists, a password reset link has been sent.",
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    async resetPassword(req, res, next) {
+        try {
+            const { token, password } = req.body;
+            await auth_service_1.authService.resetPassword(token, password);
+            res.json({ success: true, message: "Password has been successfully reset." });
+        }
+        catch (error) {
+            next(error);
+        }
     },
 };
 //# sourceMappingURL=auth.controller.js.map

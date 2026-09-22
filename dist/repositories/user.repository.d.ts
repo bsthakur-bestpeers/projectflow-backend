@@ -75,5 +75,44 @@ export declare const userRepository: {
         is_active: boolean;
         updated_at: Date;
     }>;
+    updateProfile(id: number, data: {
+        full_name?: string;
+        password_hash?: string;
+    }): Promise<{
+        id: number;
+        email: string;
+        full_name: string;
+        role: string;
+        approval_status: string;
+        is_active: boolean;
+        created_at: Date;
+        updated_at: Date;
+    }>;
+    findByResetToken(token: string): Promise<{
+        id: number;
+        email: string;
+        full_name: string;
+        password_hash: string;
+        role: string;
+        approval_status: string;
+        is_active: boolean;
+        reset_token: string | null;
+        reset_token_expires: Date | null;
+        created_at: Date;
+        updated_at: Date;
+    } | null>;
+    updateResetToken(id: number, reset_token: string | null, reset_token_expires: Date | null): Promise<{
+        id: number;
+        email: string;
+        full_name: string;
+        password_hash: string;
+        role: string;
+        approval_status: string;
+        is_active: boolean;
+        reset_token: string | null;
+        reset_token_expires: Date | null;
+        created_at: Date;
+        updated_at: Date;
+    }>;
 };
 //# sourceMappingURL=user.repository.d.ts.map

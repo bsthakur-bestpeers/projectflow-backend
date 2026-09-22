@@ -6,9 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.authService = void 0;
 const argon2_1 = __importDefault(require("argon2"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const crypto_1 = __importDefault(require("crypto"));
 const user_repository_1 = require("../repositories/user.repository");
 const error_middleware_1 = require("../middleware/error.middleware");
+const email_service_1 = require("./email.service");
 exports.authService = {
+    // ... existing register, login, getMe ...
     async register(full_name, email, password) {
         const existing = await user_repository_1.userRepository.findByEmail(email);
         if (existing) {
@@ -59,6 +62,28 @@ exports.authService = {
             throw (0, error_middleware_1.createError)("User not found.", 404);
         }
         return user;
+    },
+    async forgotPassword(email) {
+        const user = await user_repository_1.userRepository.findByEmail(email);
+        if (!user) {
+            // Do not reveal whether user exists for security reasons
+            return;
+        }
+        const resetToken = crypto_1.default.randomBytes(32).toString("hex");
+        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        await user_repository_1.userRepository.updateResetToken(user.id, resetToken, expires);
+        // Send the email
+        await email_service_1.emailService.sendPasswordResetEmail(user.email, resetToken);
+    },
+    async resetPassword(token, newPassword) {
+        const user = await user_repository_1.userRepository.findByResetToken(token);
+        if (!user) {
+            throw (0, error_middleware_1.createError)("Invalid or expired reset token.", 400);
+        }
+        const password_hash = await argon2_1.default.hash(newPassword);
+        // Update password and clear reset token
+        await user_repository_1.userRepository.updateProfile(user.id, { password_hash });
+        await user_repository_1.userRepository.updateResetToken(user.id, null, null);
     },
 };
 //# sourceMappingURL=auth.service.js.map
