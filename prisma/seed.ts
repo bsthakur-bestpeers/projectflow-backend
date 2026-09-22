@@ -6,6 +6,34 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding ProjectFlow database...");
 
+  // Seed Super Admin from .env
+  const adminEmail = process.env.SUPER_ADMIN_EMAIL;
+  const adminPassword = process.env.SUPER_ADMIN_PASSWORD;
+  const adminName = process.env.SUPER_ADMIN_NAME || "Super Admin";
+
+  if (adminEmail && adminPassword) {
+    const adminPasswordHash = await argon2.hash(adminPassword);
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {
+        role: "ADMIN",
+        approval_status: "APPROVED",
+        is_active: true,
+      },
+      create: {
+        full_name: adminName,
+        email: adminEmail,
+        password_hash: adminPasswordHash,
+        role: "ADMIN",
+        approval_status: "APPROVED",
+        is_active: true,
+      },
+    });
+    console.log(`✅ Super Admin created/updated: ${adminEmail}`);
+  } else {
+    console.log("⚠️ Super Admin credentials not found in .env, skipping super admin creation.");
+  }
+
   // Hash a default password for all seed users
   const defaultPasswordHash = await argon2.hash("Password123");
 
