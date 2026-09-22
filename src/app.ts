@@ -17,6 +17,9 @@ import { APP_NAME, APP_VERSION } from "./constants/app.constants";
 
 const app = express();
 
+// Trust proxy for rate limiters on Render
+app.set("trust proxy", 1);
+
 // Security headers
 app.use(helmet());
 
