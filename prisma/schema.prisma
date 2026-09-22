@@ -1,0 +1,122 @@
+// Prisma Schema for ProjectFlow
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  full_name     String
+  email         String   @unique
+  password_hash String
+  role                String   @default("USER")
+  approval_status     String   @default("PENDING")
+  is_active           Boolean  @default(false)
+  reset_token         String?
+  reset_token_expires DateTime?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  // Relations
+  ownedProjects    Project[]    @relation("ProjectOwner")
+  memberships      UserProject[]
+  authoredTickets  Ticket[]     @relation("TicketAuthor")
+  assignedTickets  Ticket[]     @relation("TicketAssignee")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  status      String   @default("ACTIVE")
+  created_by  Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  owner    User          @relation("ProjectOwner", fields: [created_by], references: [id])
+  members  UserProject[]
+  sprints  Sprint[]
+  tickets  Ticket[]
+
+  @@index([created_by])
+  @@index([status])
+  @@map("projects")
+}
+
+model UserProject {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  project_id Int
+  created_at DateTime @default(now())
+
+  // Relations
+  user    User    @relation(fields: [user_id], references: [id])
+  project Project @relation(fields: [project_id], references: [id])
+
+  @@unique([user_id, project_id])
+  @@index([user_id])
+  @@index([project_id])
+  @@map("users_projects")
+}
+
+model Sprint {
+  id         Int       @id @default(autoincrement())
+  project_id Int
+  name       String?
+  start_date DateTime
+  end_date   DateTime
+  status     String    @default("PLANNED")
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  // Relations
+  project Project  @relation(fields: [project_id], references: [id])
+  tickets Ticket[]
+
+  @@index([project_id])
+  @@index([status])
+  @@index([project_id, status])
+  @@index([start_date])
+  @@index([end_date])
+  @@map("sprints")
+}
+
+model Ticket {
+  id          Int      @id @default(autoincrement())
+  project_id  Int
+  sprint_id   Int?
+  title       String
+  description String?  @db.Text
+  status      String   @default("TODO")
+  estimation  String?
+  author_id   Int
+  assignee_id Int?
+  position    Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  project  Project  @relation(fields: [project_id], references: [id])
+  sprint   Sprint?  @relation(fields: [sprint_id], references: [id])
+  author   User     @relation("TicketAuthor", fields: [author_id], references: [id])
+  assignee User?    @relation("TicketAssignee", fields: [assignee_id], references: [id])
+
+  @@index([project_id])
+  @@index([sprint_id])
+  @@index([status])
+  @@index([assignee_id])
+  @@index([author_id])
+  @@index([project_id, sprint_id])
+  @@index([project_id, status])
+  @@index([position])
+  @@map("tickets")
+}
