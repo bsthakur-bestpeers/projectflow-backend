@@ -12,6 +12,7 @@ const ticketSelect = {
     title: true,
     description: true,
     status: true,
+    priority: true,
     estimation: true,
     author_id: true,
     assignee_id: true,
@@ -46,12 +47,14 @@ exports.ticketRepository = {
         });
     },
     async findByProject(projectId, filter = {}) {
-        const { status, assigneeId, search, page = 1, limit = 20 } = filter;
+        const { status, priority, assigneeId, search, page = 1, limit = 20 } = filter;
         const sprintId = filter.sprintId;
         const skip = (page - 1) * limit;
         const where = { project_id: projectId };
         if (status)
             where.status = status;
+        if (priority)
+            where.priority = priority;
         if (assigneeId)
             where.assignee_id = assigneeId;
         if (sprintId === null)

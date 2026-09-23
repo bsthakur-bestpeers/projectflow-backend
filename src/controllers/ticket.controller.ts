@@ -6,11 +6,12 @@ export const ticketController = {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const projectId = parseInt(req.params.projectId);
-      const { title, description, status, estimation, sprintId, assigneeId, authorId } = req.body;
+      const { title, description, status, priority, estimation, sprintId, assigneeId, authorId } = req.body;
       const ticket = await ticketService.createTicket(projectId, req.user!.userId, {
         title,
         description,
         status,
+        priority,
         estimation,
         sprint_id: sprintId ?? null,
         assignee_id: assigneeId ?? null,
@@ -23,9 +24,10 @@ export const ticketController = {
   async listByProject(req: Request, res: Response, next: NextFunction) {
     try {
       const projectId = parseInt(req.params.projectId);
-      const { status, assigneeId, sprintId, search, page, limit } = req.query;
+      const { status, priority, assigneeId, sprintId, search, page, limit } = req.query;
       const filter = {
         status: status as string | undefined,
+        priority: priority as string | undefined,
         assigneeId: assigneeId ? parseInt(assigneeId as string) : undefined,
         sprintId: sprintId === "null" ? null : sprintId ? parseInt(sprintId as string) : undefined,
         search: search as string | undefined,
@@ -48,13 +50,14 @@ export const ticketController = {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, description, status, estimation, assigneeId, sprintId, authorId } = req.body;
+      const { title, description, status, priority, estimation, assigneeId, sprintId, authorId } = req.body;
       const ticket = await ticketService.updateTicket(
         parseInt(req.params.ticketId), req.user!.userId,
         {
           title,
           description,
           status,
+          priority,
           estimation,
           assignee_id: assigneeId,
           sprint_id: sprintId,

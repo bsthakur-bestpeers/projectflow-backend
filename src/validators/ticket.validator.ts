@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { TICKET_STATUS } from "../constants/app.constants";
+import { TICKET_STATUS, TICKET_PRIORITIES } from "../constants/app.constants";
 
 export const createTicketValidator = [
   param("projectId").isInt({ min: 1 }).withMessage("Invalid project ID"),
@@ -14,6 +14,10 @@ export const createTicketValidator = [
     .optional()
     .isIn(TICKET_STATUS)
     .withMessage(`Status must be one of: ${TICKET_STATUS.join(", ")}`),
+  body("priority")
+    .optional()
+    .isIn(TICKET_PRIORITIES)
+    .withMessage(`Priority must be one of: ${TICKET_PRIORITIES.join(", ")}`),
   body("estimation")
     .optional({ nullable: true })
     .matches(/^\d+([hHdD])?$/)
@@ -46,6 +50,10 @@ export const updateTicketValidator = [
     .optional()
     .isIn(TICKET_STATUS)
     .withMessage(`Status must be one of: ${TICKET_STATUS.join(", ")}`),
+  body("priority")
+    .optional()
+    .isIn(TICKET_PRIORITIES)
+    .withMessage(`Priority must be one of: ${TICKET_PRIORITIES.join(", ")}`),
   body("estimation")
     .optional({ nullable: true })
     .custom((value) => value === null || /^\d+([hHdD])?$/.test(value))
@@ -81,6 +89,7 @@ export const getTicketsQueryValidator = [
   query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
   query("limit").optional().isInt({ min: 1, max: 500 }).withMessage("Limit must be between 1 and 500"),
   query("status").optional().isIn(TICKET_STATUS).withMessage("Invalid status filter"),
+  query("priority").optional().isIn(TICKET_PRIORITIES).withMessage("Invalid priority filter"),
   query("estimation").optional().matches(/^\d+([hHdD])?$/).withMessage("Invalid estimation filter"),
   query("assigneeId").optional().isInt({ min: 1 }).withMessage("Invalid assignee ID"),
   query("sprintId")
@@ -89,3 +98,4 @@ export const getTicketsQueryValidator = [
     .withMessage("Sprint ID must be a positive integer or 'null' for backlog"),
   query("search").optional().isString().isLength({ max: 100 }).withMessage("Search must be a string under 100 chars"),
 ];
+

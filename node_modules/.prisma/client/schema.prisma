@@ -97,6 +97,7 @@ model Ticket {
   title       String
   description String?  @db.Text
   status      String   @default("TODO")
+  priority    String   @default("MEDIUM")
   estimation  String?
   author_id   Int
   assignee_id Int?
@@ -113,6 +114,7 @@ model Ticket {
   @@index([project_id])
   @@index([sprint_id])
   @@index([status])
+  @@index([priority])
   @@index([assignee_id])
   @@index([author_id])
   @@index([project_id, sprint_id])

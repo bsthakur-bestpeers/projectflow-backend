@@ -7,11 +7,12 @@ exports.ticketController = {
     async create(req, res, next) {
         try {
             const projectId = parseInt(req.params.projectId);
-            const { title, description, status, estimation, sprintId, assigneeId, authorId } = req.body;
+            const { title, description, status, priority, estimation, sprintId, assigneeId, authorId } = req.body;
             const ticket = await ticket_service_1.ticketService.createTicket(projectId, req.user.userId, {
                 title,
                 description,
                 status,
+                priority,
                 estimation,
                 sprint_id: sprintId ?? null,
                 assignee_id: assigneeId ?? null,
@@ -26,9 +27,10 @@ exports.ticketController = {
     async listByProject(req, res, next) {
         try {
             const projectId = parseInt(req.params.projectId);
-            const { status, assigneeId, sprintId, search, page, limit } = req.query;
+            const { status, priority, assigneeId, sprintId, search, page, limit } = req.query;
             const filter = {
                 status: status,
+                priority: priority,
                 assigneeId: assigneeId ? parseInt(assigneeId) : undefined,
                 sprintId: sprintId === "null" ? null : sprintId ? parseInt(sprintId) : undefined,
                 search: search,
@@ -53,11 +55,12 @@ exports.ticketController = {
     },
     async update(req, res, next) {
         try {
-            const { title, description, status, estimation, assigneeId, sprintId, authorId } = req.body;
+            const { title, description, status, priority, estimation, assigneeId, sprintId, authorId } = req.body;
             const ticket = await ticket_service_1.ticketService.updateTicket(parseInt(req.params.ticketId), req.user.userId, {
                 title,
                 description,
                 status,
+                priority,
                 estimation,
                 assignee_id: assigneeId,
                 sprint_id: sprintId,

@@ -4,6 +4,7 @@ export interface CreateTicketData {
     title: string;
     description?: string | null;
     status?: string;
+    priority?: string;
     estimation?: string | null;
     author_id: number;
     assignee_id?: number | null;
@@ -13,6 +14,7 @@ export interface UpdateTicketData {
     title?: string;
     description?: string | null;
     status?: string;
+    priority?: string;
     estimation?: string | null;
     assignee_id?: number | null;
     author_id?: number;
@@ -26,6 +28,7 @@ export interface MoveTicketData {
 }
 export interface GetTicketsFilter {
     status?: string;
+    priority?: string;
     assigneeId?: number;
     sprintId?: number | null;
     search?: string;
@@ -49,6 +52,7 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -80,6 +84,7 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -112,6 +117,7 @@ export declare const ticketRepository: {
             project_id: number;
             sprint_id: number | null;
             title: string;
+            priority: string;
             estimation: string | null;
             position: number;
             author_id: number;
@@ -147,6 +153,7 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -171,6 +178,7 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -192,6 +200,7 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -223,6 +232,7 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -254,6 +264,7 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;

@@ -6,6 +6,7 @@ export interface CreateTicketData {
   title: string;
   description?: string | null;
   status?: string;
+  priority?: string;
   estimation?: string | null;
   author_id: number;
   assignee_id?: number | null;
@@ -16,6 +17,7 @@ export interface UpdateTicketData {
   title?: string;
   description?: string | null;
   status?: string;
+  priority?: string;
   estimation?: string | null;
   assignee_id?: number | null;
   author_id?: number;
@@ -31,6 +33,7 @@ export interface MoveTicketData {
 
 export interface GetTicketsFilter {
   status?: string;
+  priority?: string;
   assigneeId?: number;
   sprintId?: number | null;
   search?: string;
@@ -45,6 +48,7 @@ const ticketSelect = {
   title: true,
   description: true,
   status: true,
+  priority: true,
   estimation: true,
   author_id: true,
   assignee_id: true,
@@ -83,12 +87,13 @@ export const ticketRepository = {
   },
 
   async findByProject(projectId: number, filter: GetTicketsFilter = {}) {
-    const { status, assigneeId, search, page = 1, limit = 20 } = filter;
+    const { status, priority, assigneeId, search, page = 1, limit = 20 } = filter;
     const sprintId = filter.sprintId;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = { project_id: projectId };
     if (status) where.status = status;
+    if (priority) where.priority = priority;
     if (assigneeId) where.assignee_id = assigneeId;
     if (sprintId === null) where.sprint_id = null;
     else if (sprintId !== undefined) where.sprint_id = sprintId;

@@ -16,6 +16,10 @@ exports.createTicketValidator = [
         .optional()
         .isIn(app_constants_1.TICKET_STATUS)
         .withMessage(`Status must be one of: ${app_constants_1.TICKET_STATUS.join(", ")}`),
+    (0, express_validator_1.body)("priority")
+        .optional()
+        .isIn(app_constants_1.TICKET_PRIORITIES)
+        .withMessage(`Priority must be one of: ${app_constants_1.TICKET_PRIORITIES.join(", ")}`),
     (0, express_validator_1.body)("estimation")
         .optional({ nullable: true })
         .matches(/^\d+([hHdD])?$/)
@@ -47,6 +51,10 @@ exports.updateTicketValidator = [
         .optional()
         .isIn(app_constants_1.TICKET_STATUS)
         .withMessage(`Status must be one of: ${app_constants_1.TICKET_STATUS.join(", ")}`),
+    (0, express_validator_1.body)("priority")
+        .optional()
+        .isIn(app_constants_1.TICKET_PRIORITIES)
+        .withMessage(`Priority must be one of: ${app_constants_1.TICKET_PRIORITIES.join(", ")}`),
     (0, express_validator_1.body)("estimation")
         .optional({ nullable: true })
         .custom((value) => value === null || /^\d+([hHdD])?$/.test(value))
@@ -80,6 +88,7 @@ exports.getTicketsQueryValidator = [
     (0, express_validator_1.query)("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
     (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 500 }).withMessage("Limit must be between 1 and 500"),
     (0, express_validator_1.query)("status").optional().isIn(app_constants_1.TICKET_STATUS).withMessage("Invalid status filter"),
+    (0, express_validator_1.query)("priority").optional().isIn(app_constants_1.TICKET_PRIORITIES).withMessage("Invalid priority filter"),
     (0, express_validator_1.query)("estimation").optional().matches(/^\d+([hHdD])?$/).withMessage("Invalid estimation filter"),
     (0, express_validator_1.query)("assigneeId").optional().isInt({ min: 1 }).withMessage("Invalid assignee ID"),
     (0, express_validator_1.query)("sprintId")

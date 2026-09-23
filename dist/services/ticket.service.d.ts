@@ -16,6 +16,7 @@ export declare const ticketService: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -48,6 +49,7 @@ export declare const ticketService: {
             project_id: number;
             sprint_id: number | null;
             title: string;
+            priority: string;
             estimation: string | null;
             position: number;
             author_id: number;
@@ -83,6 +85,7 @@ export declare const ticketService: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -114,6 +117,7 @@ export declare const ticketService: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -138,6 +142,7 @@ export declare const ticketService: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -163,6 +168,7 @@ export declare const ticketService: {
         project_id: number;
         sprint_id: number | null;
         title: string;
+        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -195,6 +201,7 @@ export declare const ticketService: {
             project_id: number;
             sprint_id: number | null;
             title: string;
+            priority: string;
             estimation: string | null;
             position: number;
             author_id: number;
@@ -226,6 +233,7 @@ export declare const ticketService: {
             project_id: number;
             sprint_id: number | null;
             title: string;
+            priority: string;
             estimation: string | null;
             position: number;
             author_id: number;
