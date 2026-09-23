@@ -168,7 +168,10 @@ export const ticketRepository = {
     return prisma.ticket.findMany({
       where: {
         project: {
-          members: { some: { user_id: userId } },
+          OR: [
+            { created_by: userId },
+            { members: { some: { user_id: userId } } },
+          ],
         },
       },
       select: ticketSelect,

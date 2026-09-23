@@ -1,4 +1,5 @@
 import sanitizeHtml from "sanitize-html";
+import prisma from "../db/prisma";
 import { ticketRepository, CreateTicketData, UpdateTicketData, GetTicketsFilter } from "../repositories/ticket.repository";
 import { projectRepository } from "../repositories/project.repository";
 import { memberRepository } from "../repositories/member.repository";
@@ -85,7 +86,21 @@ export const ticketService = {
 
   async getTickets(projectId: number, userId: number, filter: GetTicketsFilter) {
     await assertProjectMember(projectId, userId);
-    return ticketRepository.findByProject(projectId, filter);
+    try {
+      return await ticketRepository.findByProject(projectId, filter);
+    } catch (err) {
+      try {
+        await prisma.$executeRawUnsafe(
+          `ALTER TABLE "tickets" ADD COLUMN IF NOT EXISTS "priority" TEXT NOT NULL DEFAULT 'MEDIUM';`
+        );
+        await prisma.$executeRawUnsafe(
+          `CREATE INDEX IF NOT EXISTS "tickets_priority_idx" ON "tickets"("priority");`
+        );
+        return await ticketRepository.findByProject(projectId, filter);
+      } catch {
+        throw err;
+      }
+    }
   },
 
   async getTicketById(ticketId: number, userId: number) {
@@ -177,10 +192,36 @@ export const ticketService = {
   },
 
   async getDashboardData(userId: number) {
-    const [assignedTickets, recentTickets] = await Promise.all([
-      ticketRepository.getAssignedToUser(userId, 10),
-      ticketRepository.getRecentlyUpdated(userId, 10),
-    ]);
-    return { assignedTickets, recentTickets };
+    // Attempt auto-migration of missing columns in production if needed
+    try {
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "tickets" ADD COLUMN IF NOT EXISTS "priority" TEXT NOT NULL DEFAULT 'MEDIUM';`
+      );
+      await prisma.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "tickets_priority_idx" ON "tickets"("priority");`
+      );
+    } catch {
+      // Ignore if already applied
+    }
+
+    try {
+      const [assignedTickets, recentTickets] = await Promise.all([
+        ticketRepository.getAssignedToUser(userId, 10).catch((err) => {
+          console.error("Assigned tickets query failed:", err);
+          return [];
+        }),
+        ticketRepository.getRecentlyUpdated(userId, 10).catch((err) => {
+          console.error("Recently updated tickets query failed:", err);
+          return [];
+        }),
+      ]);
+      return {
+        assignedTickets: assignedTickets || [],
+        recentTickets: recentTickets || [],
+      };
+    } catch (err) {
+      console.error("Fatal error in getDashboardData:", err);
+      return { assignedTickets: [], recentTickets: [] };
+    }
   },
 };

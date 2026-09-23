@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "prisma generate && tsc",
+    "build": "npx prisma generate && npx tsc",
     "start": "node dist/server.js",
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:generate": "npx prisma generate",
@@ -24,7 +24,9 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.4.0",
     "nodemailer": "^10.0.10",
-    "sanitize-html": "^2.13.0"
+    "prisma": "^5.17.0",
+    "sanitize-html": "^2.13.0",
+    "typescript": "^5.5.4"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.7",
@@ -35,10 +37,8 @@
     "@types/node": "^20.16.0",
     "@types/nodemailer": "^8.0.2",
     "@types/sanitize-html": "^2.13.0",
-    "prisma": "^5.17.0",
     "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.5.4"
+    "ts-node-dev": "^2.0.0"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

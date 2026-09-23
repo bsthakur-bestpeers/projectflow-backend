@@ -216,7 +216,7 @@ export declare const ticketService: {
                 email: string;
                 full_name: string;
             } | null;
-        }[];
+        }[] | never[];
         recentTickets: {
             sprint: {
                 id: number;
@@ -248,7 +248,7 @@ export declare const ticketService: {
                 email: string;
                 full_name: string;
             } | null;
-        }[];
+        }[] | never[];
     }>;
 };
 //# sourceMappingURL=ticket.service.d.ts.map

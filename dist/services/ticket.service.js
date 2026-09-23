@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ticketService = void 0;
 const sanitize_html_1 = __importDefault(require("sanitize-html"));
+const prisma_1 = __importDefault(require("../db/prisma"));
 const ticket_repository_1 = require("../repositories/ticket.repository");
 const project_repository_1 = require("../repositories/project.repository");
 const member_repository_1 = require("../repositories/member.repository");
@@ -83,7 +84,19 @@ exports.ticketService = {
     },
     async getTickets(projectId, userId, filter) {
         await assertProjectMember(projectId, userId);
-        return ticket_repository_1.ticketRepository.findByProject(projectId, filter);
+        try {
+            return await ticket_repository_1.ticketRepository.findByProject(projectId, filter);
+        }
+        catch (err) {
+            try {
+                await prisma_1.default.$executeRawUnsafe(`ALTER TABLE "tickets" ADD COLUMN IF NOT EXISTS "priority" TEXT NOT NULL DEFAULT 'MEDIUM';`);
+                await prisma_1.default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "tickets_priority_idx" ON "tickets"("priority");`);
+                return await ticket_repository_1.ticketRepository.findByProject(projectId, filter);
+            }
+            catch {
+                throw err;
+            }
+        }
     },
     async getTicketById(ticketId, userId) {
         const ticket = await ticket_repository_1.ticketRepository.findById(ticketId);
@@ -161,11 +174,34 @@ exports.ticketService = {
         }, ticket.project_id);
     },
     async getDashboardData(userId) {
-        const [assignedTickets, recentTickets] = await Promise.all([
-            ticket_repository_1.ticketRepository.getAssignedToUser(userId, 10),
-            ticket_repository_1.ticketRepository.getRecentlyUpdated(userId, 10),
-        ]);
-        return { assignedTickets, recentTickets };
+        // Attempt auto-migration of missing columns in production if needed
+        try {
+            await prisma_1.default.$executeRawUnsafe(`ALTER TABLE "tickets" ADD COLUMN IF NOT EXISTS "priority" TEXT NOT NULL DEFAULT 'MEDIUM';`);
+            await prisma_1.default.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "tickets_priority_idx" ON "tickets"("priority");`);
+        }
+        catch {
+            // Ignore if already applied
+        }
+        try {
+            const [assignedTickets, recentTickets] = await Promise.all([
+                ticket_repository_1.ticketRepository.getAssignedToUser(userId, 10).catch((err) => {
+                    console.error("Assigned tickets query failed:", err);
+                    return [];
+                }),
+                ticket_repository_1.ticketRepository.getRecentlyUpdated(userId, 10).catch((err) => {
+                    console.error("Recently updated tickets query failed:", err);
+                    return [];
+                }),
+            ]);
+            return {
+                assignedTickets: assignedTickets || [],
+                recentTickets: recentTickets || [],
+            };
+        }
+        catch (err) {
+            console.error("Fatal error in getDashboardData:", err);
+            return { assignedTickets: [], recentTickets: [] };
+        }
     },
 };
 //# sourceMappingURL=ticket.service.js.map

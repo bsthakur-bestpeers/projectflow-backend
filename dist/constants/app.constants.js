@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAX_LIMIT = exports.DEFAULT_LIMIT = exports.DEFAULT_PAGE = exports.JWT_COOKIE_NAME = exports.TICKET_PRIORITIES = exports.TICKET_STATUS = exports.SPRINT_STATUS = exports.PROJECT_STATUS = exports.APP_VERSION = exports.APP_NAME = void 0;
 exports.APP_NAME = "ProjectFlow";
-exports.APP_VERSION = "v1.0.0";
+exports.APP_VERSION = "v1.0.1";
 exports.PROJECT_STATUS = ["ACTIVE", "COMPLETED", "ARCHIVED"];
 exports.SPRINT_STATUS = ["PLANNED", "ACTIVE", "COMPLETED", "CANCELLED"];
 exports.TICKET_STATUS = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
