@@ -107,6 +107,7 @@ export declare const ticketRepository: {
         limit: number;
     }>;
     update(id: number, data: UpdateTicketData): Promise<{
+        priority: any;
         sprint: {
             id: number;
             name: string | null;
@@ -122,7 +123,6 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
-        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -154,6 +154,7 @@ export declare const ticketRepository: {
         assignee_id: number | null;
     }>;
     moveTicket(ticketId: number, data: MoveTicketData, projectId: number): Promise<{
+        priority: any;
         sprint: {
             id: number;
             name: string | null;
@@ -169,7 +170,6 @@ export declare const ticketRepository: {
         project_id: number;
         sprint_id: number | null;
         title: string;
-        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;

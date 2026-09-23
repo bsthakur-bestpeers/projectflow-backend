@@ -71,6 +71,7 @@ export declare const ticketService: {
         } | null;
     }>;
     updateTicket(ticketId: number, userId: number, data: UpdateTicketData): Promise<{
+        priority: any;
         sprint: {
             id: number;
             name: string | null;
@@ -86,7 +87,6 @@ export declare const ticketService: {
         project_id: number;
         sprint_id: number | null;
         title: string;
-        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;
@@ -122,6 +122,7 @@ export declare const ticketService: {
         position?: number;
         sprintId?: number | null;
     }): Promise<{
+        priority: any;
         sprint: {
             id: number;
             name: string | null;
@@ -137,7 +138,6 @@ export declare const ticketService: {
         project_id: number;
         sprint_id: number | null;
         title: string;
-        priority: string;
         estimation: string | null;
         position: number;
         author_id: number;

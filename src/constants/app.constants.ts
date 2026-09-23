@@ -10,7 +10,7 @@ export type SprintStatus = (typeof SPRINT_STATUS)[number];
 export const TICKET_STATUS = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"] as const;
 export type TicketStatus = (typeof TICKET_STATUS)[number];
 
-export const TICKET_PRIORITIES = ["HIGHEST", "HIGH", "MEDIUM", "LOW", "LOWEST"] as const;
+export const TICKET_PRIORITIES = ["HIGH", "MEDIUM", "LOW"] as const;
 export type TicketPriority = (typeof TICKET_PRIORITIES)[number];
 
 export const JWT_COOKIE_NAME = "projectflow_token";

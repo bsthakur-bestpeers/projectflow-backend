@@ -22,8 +22,12 @@ exports.createTicketValidator = [
         .withMessage(`Priority must be one of: ${app_constants_1.TICKET_PRIORITIES.join(", ")}`),
     (0, express_validator_1.body)("estimation")
         .optional({ nullable: true })
-        .matches(/^\d+([hHdD])?$/)
-        .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1h, 2d, 3)"),
+        .custom((value) => {
+        if (value === null || value === undefined || value === "")
+            return true;
+        return /^\d+(\.\d+)?([hHdD])?$/.test(String(value).trim());
+    })
+        .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1.5, 2.5, 1.5h, 2d)"),
     (0, express_validator_1.body)("sprintId")
         .optional({ nullable: true })
         .custom((value) => value === null || (Number.isInteger(value) && value > 0))
@@ -57,8 +61,12 @@ exports.updateTicketValidator = [
         .withMessage(`Priority must be one of: ${app_constants_1.TICKET_PRIORITIES.join(", ")}`),
     (0, express_validator_1.body)("estimation")
         .optional({ nullable: true })
-        .custom((value) => value === null || /^\d+([hHdD])?$/.test(value))
-        .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1h, 2d, 3)"),
+        .custom((value) => {
+        if (value === null || value === undefined || value === "")
+            return true;
+        return /^\d+(\.\d+)?([hHdD])?$/.test(String(value).trim());
+    })
+        .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1.5, 2.5, 1.5h, 2d)"),
     (0, express_validator_1.body)("assigneeId")
         .optional({ nullable: true })
         .custom((value) => value === null || (Number.isInteger(value) && value > 0))
@@ -89,7 +97,14 @@ exports.getTicketsQueryValidator = [
     (0, express_validator_1.query)("limit").optional().isInt({ min: 1, max: 500 }).withMessage("Limit must be between 1 and 500"),
     (0, express_validator_1.query)("status").optional().isIn(app_constants_1.TICKET_STATUS).withMessage("Invalid status filter"),
     (0, express_validator_1.query)("priority").optional().isIn(app_constants_1.TICKET_PRIORITIES).withMessage("Invalid priority filter"),
-    (0, express_validator_1.query)("estimation").optional().matches(/^\d+([hHdD])?$/).withMessage("Invalid estimation filter"),
+    (0, express_validator_1.query)("estimation")
+        .optional()
+        .custom((value) => {
+        if (!value)
+            return true;
+        return /^\d+(\.\d+)?([hHdD])?$/.test(String(value).trim());
+    })
+        .withMessage("Invalid estimation filter"),
     (0, express_validator_1.query)("assigneeId").optional().isInt({ min: 1 }).withMessage("Invalid assignee ID"),
     (0, express_validator_1.query)("sprintId")
         .optional()

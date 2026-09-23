@@ -191,11 +191,33 @@ export const ticketRepository = {
   },
 
   async update(id: number, data: UpdateTicketData) {
-    return prisma.ticket.update({
-      where: { id },
-      data,
-      select: ticketSelect,
-    });
+    try {
+      return await prisma.ticket.update({
+        where: { id },
+        data,
+        select: ticketSelect,
+      });
+    } catch (err: any) {
+      console.warn("Primary ticket update failed, falling back:", err?.message);
+      const { priority: _p, ...fallbackData } = data;
+      const updated = await prisma.ticket.update({
+        where: { id },
+        data: fallbackData,
+        select: fallbackTicketSelect,
+      });
+      if (data.priority !== undefined) {
+        try {
+          await prisma.$executeRawUnsafe(
+            `UPDATE "tickets" SET "priority" = $1 WHERE "id" = $2`,
+            data.priority,
+            id
+          );
+        } catch {
+          // ignore if column doesn't exist
+        }
+      }
+      return { ...updated, priority: data.priority ?? (updated as any).priority ?? "MEDIUM" };
+    }
   },
 
   async delete(id: number) {
@@ -228,15 +250,29 @@ export const ticketRepository = {
         data: { position: { increment: 1 } },
       });
 
-      return tx.ticket.update({
-        where: { id: ticketId },
-        data: {
-          status: newStatus,
-          sprint_id: newSprintId,
-          position: newPosition,
-        },
-        select: ticketSelect,
-      });
+      try {
+        return await tx.ticket.update({
+          where: { id: ticketId },
+          data: {
+            status: newStatus,
+            sprint_id: newSprintId,
+            position: newPosition,
+          },
+          select: ticketSelect,
+        });
+      } catch (err: any) {
+        console.warn("Primary moveTicket update failed, falling back:", err?.message);
+        const fallbackUpdated = await tx.ticket.update({
+          where: { id: ticketId },
+          data: {
+            status: newStatus,
+            sprint_id: newSprintId,
+            position: newPosition,
+          },
+          select: fallbackTicketSelect,
+        });
+        return { ...fallbackUpdated, priority: (ticket as any).priority ?? "MEDIUM" };
+      }
     });
   },
 

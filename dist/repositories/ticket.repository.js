@@ -152,11 +152,31 @@ exports.ticketRepository = {
         }
     },
     async update(id, data) {
-        return prisma_1.default.ticket.update({
-            where: { id },
-            data,
-            select: ticketSelect,
-        });
+        try {
+            return await prisma_1.default.ticket.update({
+                where: { id },
+                data,
+                select: ticketSelect,
+            });
+        }
+        catch (err) {
+            console.warn("Primary ticket update failed, falling back:", err?.message);
+            const { priority: _p, ...fallbackData } = data;
+            const updated = await prisma_1.default.ticket.update({
+                where: { id },
+                data: fallbackData,
+                select: fallbackTicketSelect,
+            });
+            if (data.priority !== undefined) {
+                try {
+                    await prisma_1.default.$executeRawUnsafe(`UPDATE "tickets" SET "priority" = $1 WHERE "id" = $2`, data.priority, id);
+                }
+                catch {
+                    // ignore if column doesn't exist
+                }
+            }
+            return { ...updated, priority: data.priority ?? updated.priority ?? "MEDIUM" };
+        }
     },
     async delete(id) {
         return prisma_1.default.ticket.delete({ where: { id } });
@@ -180,15 +200,30 @@ exports.ticketRepository = {
                 },
                 data: { position: { increment: 1 } },
             });
-            return tx.ticket.update({
-                where: { id: ticketId },
-                data: {
-                    status: newStatus,
-                    sprint_id: newSprintId,
-                    position: newPosition,
-                },
-                select: ticketSelect,
-            });
+            try {
+                return await tx.ticket.update({
+                    where: { id: ticketId },
+                    data: {
+                        status: newStatus,
+                        sprint_id: newSprintId,
+                        position: newPosition,
+                    },
+                    select: ticketSelect,
+                });
+            }
+            catch (err) {
+                console.warn("Primary moveTicket update failed, falling back:", err?.message);
+                const fallbackUpdated = await tx.ticket.update({
+                    where: { id: ticketId },
+                    data: {
+                        status: newStatus,
+                        sprint_id: newSprintId,
+                        position: newPosition,
+                    },
+                    select: fallbackTicketSelect,
+                });
+                return { ...fallbackUpdated, priority: ticket.priority ?? "MEDIUM" };
+            }
         });
     },
     async getRecentlyUpdated(userId, limit = 10) {

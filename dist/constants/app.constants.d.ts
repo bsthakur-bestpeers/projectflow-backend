@@ -6,7 +6,7 @@ export declare const SPRINT_STATUS: readonly ["PLANNED", "ACTIVE", "COMPLETED", 
 export type SprintStatus = (typeof SPRINT_STATUS)[number];
 export declare const TICKET_STATUS: readonly ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 export type TicketStatus = (typeof TICKET_STATUS)[number];
-export declare const TICKET_PRIORITIES: readonly ["HIGHEST", "HIGH", "MEDIUM", "LOW", "LOWEST"];
+export declare const TICKET_PRIORITIES: readonly ["HIGH", "MEDIUM", "LOW"];
 export type TicketPriority = (typeof TICKET_PRIORITIES)[number];
 export declare const JWT_COOKIE_NAME = "projectflow_token";
 export declare const DEFAULT_PAGE = 1;

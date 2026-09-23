@@ -20,8 +20,11 @@ export const createTicketValidator = [
     .withMessage(`Priority must be one of: ${TICKET_PRIORITIES.join(", ")}`),
   body("estimation")
     .optional({ nullable: true })
-    .matches(/^\d+([hHdD])?$/)
-    .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1h, 2d, 3)"),
+    .custom((value) => {
+      if (value === null || value === undefined || value === "") return true;
+      return /^\d+(\.\d+)?([hHdD])?$/.test(String(value).trim());
+    })
+    .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1.5, 2.5, 1.5h, 2d)"),
   body("sprintId")
     .optional({ nullable: true })
     .custom((value) => value === null || (Number.isInteger(value) && value > 0))
@@ -56,8 +59,11 @@ export const updateTicketValidator = [
     .withMessage(`Priority must be one of: ${TICKET_PRIORITIES.join(", ")}`),
   body("estimation")
     .optional({ nullable: true })
-    .custom((value) => value === null || /^\d+([hHdD])?$/.test(value))
-    .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1h, 2d, 3)"),
+    .custom((value) => {
+      if (value === null || value === undefined || value === "") return true;
+      return /^\d+(\.\d+)?([hHdD])?$/.test(String(value).trim());
+    })
+    .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1.5, 2.5, 1.5h, 2d)"),
   body("assigneeId")
     .optional({ nullable: true })
     .custom((value) => value === null || (Number.isInteger(value) && value > 0))
@@ -90,7 +96,13 @@ export const getTicketsQueryValidator = [
   query("limit").optional().isInt({ min: 1, max: 500 }).withMessage("Limit must be between 1 and 500"),
   query("status").optional().isIn(TICKET_STATUS).withMessage("Invalid status filter"),
   query("priority").optional().isIn(TICKET_PRIORITIES).withMessage("Invalid priority filter"),
-  query("estimation").optional().matches(/^\d+([hHdD])?$/).withMessage("Invalid estimation filter"),
+  query("estimation")
+    .optional()
+    .custom((value) => {
+      if (!value) return true;
+      return /^\d+(\.\d+)?([hHdD])?$/.test(String(value).trim());
+    })
+    .withMessage("Invalid estimation filter"),
   query("assigneeId").optional().isInt({ min: 1 }).withMessage("Invalid assignee ID"),
   query("sprintId")
     .optional()

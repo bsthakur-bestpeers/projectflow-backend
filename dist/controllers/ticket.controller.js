@@ -12,8 +12,8 @@ exports.ticketController = {
                 title,
                 description,
                 status,
-                priority,
-                estimation,
+                priority: priority || "MEDIUM",
+                estimation: estimation && String(estimation).trim() !== "" ? String(estimation).trim() : null,
                 sprint_id: sprintId ?? null,
                 assignee_id: assigneeId ?? null,
                 author_id: authorId ? parseInt(authorId) : req.user.userId,
@@ -65,7 +65,11 @@ exports.ticketController = {
                 description,
                 status,
                 priority,
-                estimation,
+                estimation: estimation !== undefined
+                    ? estimation && String(estimation).trim() !== ""
+                        ? String(estimation).trim()
+                        : null
+                    : undefined,
                 assignee_id: assigneeId,
                 sprint_id: sprintId,
                 author_id: authorId ? parseInt(authorId) : undefined,
