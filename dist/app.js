@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const path_1 = __importDefault(require("path"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const project_routes_1 = __importDefault(require("./routes/project.routes"));
 const sprint_routes_1 = __importDefault(require("./routes/sprint.routes"));
@@ -21,7 +22,9 @@ const app = (0, express_1.default)();
 // Trust proxy for rate limiters on Render
 app.set("trust proxy", 1);
 // Security headers
-app.use((0, helmet_1.default)());
+app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 // CORS
 app.use((0, cors_1.default)({
     origin: process.env.CORS_ORIGIN
@@ -33,8 +36,12 @@ app.use((0, cors_1.default)({
 app.use(express_1.default.json({ limit: "2mb" }));
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
-// Serve static uploads
-app.use("/uploads", express_1.default.static("uploads"));
+// Serve static uploads with cross-origin headers
+app.use("/uploads", (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    next();
+}, express_1.default.static(path_1.default.join(process.cwd(), "uploads")));
 // Health check with version info
 app.get("/health", (_, res) => {
     res.json({

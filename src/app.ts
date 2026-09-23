@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import path from "path";
 
 import authRoutes from "./routes/auth.routes";
 import projectRoutes from "./routes/project.routes";
@@ -21,7 +22,11 @@ const app = express();
 app.set("trust proxy", 1);
 
 // Security headers
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 // CORS
 app.use(cors({
@@ -36,8 +41,16 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Serve static uploads
-app.use("/uploads", express.static("uploads"));
+// Serve static uploads with cross-origin headers
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    next();
+  },
+  express.static(path.join(process.cwd(), "uploads"))
+);
 
 // Health check with version info
 app.get("/health", (_, res) => {
