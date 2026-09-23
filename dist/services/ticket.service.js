@@ -14,11 +14,22 @@ const error_middleware_1 = require("../middleware/error.middleware");
 const ALLOWED_HTML_TAGS = [
     "b", "i", "em", "strong", "a", "p", "ul", "ol", "li",
     "h1", "h2", "h3", "blockquote", "code", "pre", "br", "s",
+    "div", "span", "img",
 ];
 function sanitizeDescription(html) {
     return (0, sanitize_html_1.default)(html, {
         allowedTags: ALLOWED_HTML_TAGS,
-        allowedAttributes: { a: ["href", "target"] },
+        allowedAttributes: {
+            a: ["href", "target", "rel", "download"],
+            img: ["src", "alt", "width", "height", "class"],
+            div: ["data-attachments", "style", "class"],
+            span: ["style", "class"],
+            "*": ["data-*"],
+        },
+        allowedSchemes: ["http", "https", "data"],
+        allowedSchemesByTag: {
+            img: ["http", "https", "data"],
+        },
     });
 }
 async function assertProjectMember(projectId, userId) {

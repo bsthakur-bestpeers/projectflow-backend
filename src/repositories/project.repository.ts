@@ -110,11 +110,11 @@ export const projectRepository = {
 
   async getTicketSummary(projectId: number) {
     const [total, todo, inProgress, inReview, done] = await prisma.$transaction([
-      prisma.ticket.count({ where: { project_id: projectId } }),
-      prisma.ticket.count({ where: { project_id: projectId, status: "TODO" } }),
-      prisma.ticket.count({ where: { project_id: projectId, status: "IN_PROGRESS" } }),
-      prisma.ticket.count({ where: { project_id: projectId, status: "IN_REVIEW" } }),
-      prisma.ticket.count({ where: { project_id: projectId, status: "DONE" } }),
+      prisma.ticket.count({ where: { project_id: projectId, sprint_id: { not: null } } }),
+      prisma.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "TODO" } }),
+      prisma.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "IN_PROGRESS" } }),
+      prisma.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "IN_REVIEW" } }),
+      prisma.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "DONE" } }),
     ]);
     return { total, TODO: todo, IN_PROGRESS: inProgress, IN_REVIEW: inReview, DONE: done };
   },

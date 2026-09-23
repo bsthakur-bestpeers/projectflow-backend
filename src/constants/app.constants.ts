@@ -10,8 +10,7 @@ export type SprintStatus = (typeof SPRINT_STATUS)[number];
 export const TICKET_STATUS = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"] as const;
 export type TicketStatus = (typeof TICKET_STATUS)[number];
 
-export const ESTIMATION_OPTIONS = ["1h", "2h", "3h", "1d", "2d", "3d"] as const;
-export type EstimationOption = (typeof ESTIMATION_OPTIONS)[number];
+
 
 export const JWT_COOKIE_NAME = "projectflow_token";
 

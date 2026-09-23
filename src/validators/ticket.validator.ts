@@ -1,5 +1,5 @@
 import { body, param, query } from "express-validator";
-import { TICKET_STATUS, ESTIMATION_OPTIONS } from "../constants/app.constants";
+import { TICKET_STATUS } from "../constants/app.constants";
 
 export const createTicketValidator = [
   param("projectId").isInt({ min: 1 }).withMessage("Invalid project ID"),
@@ -16,8 +16,8 @@ export const createTicketValidator = [
     .withMessage(`Status must be one of: ${TICKET_STATUS.join(", ")}`),
   body("estimation")
     .optional({ nullable: true })
-    .isIn(ESTIMATION_OPTIONS)
-    .withMessage(`Estimation must be one of: ${ESTIMATION_OPTIONS.join(", ")}`),
+    .matches(/^\d+([hHdD])?$/)
+    .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1h, 2d, 3)"),
   body("sprintId")
     .optional({ nullable: true })
     .custom((value) => value === null || (Number.isInteger(value) && value > 0))
@@ -48,8 +48,8 @@ export const updateTicketValidator = [
     .withMessage(`Status must be one of: ${TICKET_STATUS.join(", ")}`),
   body("estimation")
     .optional({ nullable: true })
-    .isIn([...ESTIMATION_OPTIONS, null])
-    .withMessage(`Estimation must be one of: ${ESTIMATION_OPTIONS.join(", ")}`),
+    .custom((value) => value === null || /^\d+([hHdD])?$/.test(value))
+    .withMessage("Estimation must be a number optionally followed by h or d (e.g., 1h, 2d, 3)"),
   body("assigneeId")
     .optional({ nullable: true })
     .custom((value) => value === null || (Number.isInteger(value) && value > 0))
@@ -81,7 +81,7 @@ export const getTicketsQueryValidator = [
   query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
   query("limit").optional().isInt({ min: 1, max: 500 }).withMessage("Limit must be between 1 and 500"),
   query("status").optional().isIn(TICKET_STATUS).withMessage("Invalid status filter"),
-  query("estimation").optional().isIn(ESTIMATION_OPTIONS).withMessage("Invalid estimation filter"),
+  query("estimation").optional().matches(/^\d+([hHdD])?$/).withMessage("Invalid estimation filter"),
   query("assigneeId").optional().isInt({ min: 1 }).withMessage("Invalid assignee ID"),
   query("sprintId")
     .optional()

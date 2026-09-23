@@ -6,8 +6,6 @@ export declare const SPRINT_STATUS: readonly ["PLANNED", "ACTIVE", "COMPLETED", 
 export type SprintStatus = (typeof SPRINT_STATUS)[number];
 export declare const TICKET_STATUS: readonly ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 export type TicketStatus = (typeof TICKET_STATUS)[number];
-export declare const ESTIMATION_OPTIONS: readonly ["1h", "2h", "3h", "1d", "2d", "3d"];
-export type EstimationOption = (typeof ESTIMATION_OPTIONS)[number];
 export declare const JWT_COOKIE_NAME = "projectflow_token";
 export declare const DEFAULT_PAGE = 1;
 export declare const DEFAULT_LIMIT = 20;
