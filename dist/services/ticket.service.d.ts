@@ -33,38 +33,7 @@ export declare const ticketService: {
         } | null;
     }>;
     getTickets(projectId: number, userId: number, filter: GetTicketsFilter): Promise<{
-        tickets: {
-            sprint: {
-                id: number;
-                name: string | null;
-                status: string;
-                start_date: Date;
-                end_date: Date;
-            } | null;
-            id: number;
-            created_at: Date;
-            updated_at: Date;
-            description: string | null;
-            status: string;
-            project_id: number;
-            sprint_id: number | null;
-            title: string;
-            priority: string;
-            estimation: string | null;
-            position: number;
-            author_id: number;
-            assignee_id: number | null;
-            author: {
-                id: number;
-                email: string;
-                full_name: string;
-            };
-            assignee: {
-                id: number;
-                email: string;
-                full_name: string;
-            } | null;
-        }[];
+        tickets: any[];
         total: number;
         page: number;
         limit: number;
@@ -185,70 +154,8 @@ export declare const ticketService: {
         } | null;
     }>;
     getDashboardData(userId: number): Promise<{
-        assignedTickets: {
-            sprint: {
-                id: number;
-                name: string | null;
-                status: string;
-                start_date: Date;
-                end_date: Date;
-            } | null;
-            id: number;
-            created_at: Date;
-            updated_at: Date;
-            description: string | null;
-            status: string;
-            project_id: number;
-            sprint_id: number | null;
-            title: string;
-            priority: string;
-            estimation: string | null;
-            position: number;
-            author_id: number;
-            assignee_id: number | null;
-            author: {
-                id: number;
-                email: string;
-                full_name: string;
-            };
-            assignee: {
-                id: number;
-                email: string;
-                full_name: string;
-            } | null;
-        }[] | never[];
-        recentTickets: {
-            sprint: {
-                id: number;
-                name: string | null;
-                status: string;
-                start_date: Date;
-                end_date: Date;
-            } | null;
-            id: number;
-            created_at: Date;
-            updated_at: Date;
-            description: string | null;
-            status: string;
-            project_id: number;
-            sprint_id: number | null;
-            title: string;
-            priority: string;
-            estimation: string | null;
-            position: number;
-            author_id: number;
-            assignee_id: number | null;
-            author: {
-                id: number;
-                email: string;
-                full_name: string;
-            };
-            assignee: {
-                id: number;
-                email: string;
-                full_name: string;
-            } | null;
-        }[] | never[];
+        assignedTickets: any[] | never[];
+        recentTickets: any[] | never[];
     }>;
 };
 //# sourceMappingURL=ticket.service.d.ts.map

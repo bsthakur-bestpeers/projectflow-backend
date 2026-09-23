@@ -10,12 +10,8 @@ const createError = (message, statusCode) => {
 exports.createError = createError;
 const errorHandler = (err, req, res, _next) => {
     const statusCode = err.statusCode || 500;
-    const message = err.isOperational
-        ? err.message
-        : "An unexpected error occurred. Please try again.";
-    if (process.env.NODE_ENV === "development" && !err.isOperational) {
-        console.error("Unhandled error:", err);
-    }
+    const message = err.message || "An unexpected error occurred. Please try again.";
+    console.error(`[API Error ${req.method} ${req.originalUrl || req.path}]:`, err);
     res.status(statusCode).json({
         success: false,
         message,

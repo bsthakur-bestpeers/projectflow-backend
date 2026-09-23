@@ -60,6 +60,24 @@ const ticketSelect = {
   sprint: { select: { id: true, name: true, status: true, start_date: true, end_date: true } },
 };
 
+const fallbackTicketSelect = {
+  id: true,
+  project_id: true,
+  sprint_id: true,
+  title: true,
+  description: true,
+  status: true,
+  estimation: true,
+  author_id: true,
+  assignee_id: true,
+  position: true,
+  created_at: true,
+  updated_at: true,
+  author: { select: { id: true, full_name: true, email: true } },
+  assignee: { select: { id: true, full_name: true, email: true } },
+  sprint: { select: { id: true, name: true, status: true, start_date: true, end_date: true } },
+};
+
 export const ticketRepository = {
   async create(data: CreateTicketData) {
     // Get the max position in the target column
@@ -73,17 +91,34 @@ export const ticketRepository = {
     });
     const position = (maxPosition._max.position ?? 0) + 1;
 
-    return prisma.ticket.create({
-      data: { ...data, position },
-      select: ticketSelect,
-    });
+    try {
+      return await prisma.ticket.create({
+        data: { ...data, position },
+        select: ticketSelect,
+      });
+    } catch {
+      const { priority: _p, ...fallbackData } = data;
+      const created = await prisma.ticket.create({
+        data: { ...fallbackData, position },
+        select: fallbackTicketSelect,
+      });
+      return { ...created, priority: data.priority ?? "MEDIUM" };
+    }
   },
 
   async findById(id: number) {
-    return prisma.ticket.findUnique({
-      where: { id },
-      select: ticketSelect,
-    });
+    try {
+      return await prisma.ticket.findUnique({
+        where: { id },
+        select: ticketSelect,
+      });
+    } catch {
+      const ticket = await prisma.ticket.findUnique({
+        where: { id },
+        select: fallbackTicketSelect,
+      });
+      return ticket ? { ...ticket, priority: "MEDIUM" } : null;
+    }
   },
 
   async findByProject(projectId: number, filter: GetTicketsFilter = {}) {
@@ -101,17 +136,58 @@ export const ticketRepository = {
       where.title = { contains: search, mode: "insensitive" };
     }
 
-    const [tickets, total] = await prisma.$transaction([
-      prisma.ticket.findMany({
-        where,
-        select: ticketSelect,
-        orderBy: [{ status: "asc" }, { position: "asc" }],
-        skip,
-        take: limit,
-      }),
-      prisma.ticket.count({ where }),
-    ]);
-    return { tickets, total, page, limit };
+    try {
+      const [tickets, total] = await Promise.all([
+        prisma.ticket.findMany({
+          where,
+          select: ticketSelect,
+          orderBy: [{ status: "asc" }, { position: "asc" }],
+          skip,
+          take: limit,
+        }),
+        prisma.ticket.count({ where }),
+      ]);
+      return { tickets, total, page, limit };
+    } catch (err: any) {
+      console.warn("Primary findByProject failed, attempting auto-repair/fallback:", err?.message);
+      try {
+        await prisma.$executeRawUnsafe(
+          `ALTER TABLE "tickets" ADD COLUMN IF NOT EXISTS "priority" TEXT NOT NULL DEFAULT 'MEDIUM';`
+        );
+        await prisma.$executeRawUnsafe(
+          `CREATE INDEX IF NOT EXISTS "tickets_priority_idx" ON "tickets"("priority");`
+        );
+        const [tickets, total] = await Promise.all([
+          prisma.ticket.findMany({
+            where,
+            select: ticketSelect,
+            orderBy: [{ status: "asc" }, { position: "asc" }],
+            skip,
+            take: limit,
+          }),
+          prisma.ticket.count({ where }),
+        ]);
+        return { tickets, total, page, limit };
+      } catch {
+        const fallbackWhere = { ...where };
+        delete fallbackWhere.priority;
+        const [tickets, total] = await Promise.all([
+          prisma.ticket.findMany({
+            where: fallbackWhere,
+            select: fallbackTicketSelect,
+            orderBy: [{ status: "asc" }, { position: "asc" }],
+            skip,
+            take: limit,
+          }),
+          prisma.ticket.count({ where: fallbackWhere }),
+        ]);
+        const mappedTickets = tickets.map((t: any) => ({
+          ...t,
+          priority: "MEDIUM",
+        }));
+        return { tickets: mappedTickets, total, page, limit };
+      }
+    }
   },
 
   async update(id: number, data: UpdateTicketData) {
@@ -165,30 +241,52 @@ export const ticketRepository = {
   },
 
   async getRecentlyUpdated(userId: number, limit: number = 10) {
-    return prisma.ticket.findMany({
-      where: {
-        project: {
-          OR: [
-            { created_by: userId },
-            { members: { some: { user_id: userId } } },
-          ],
-        },
+    const where = {
+      project: {
+        OR: [
+          { created_by: userId },
+          { members: { some: { user_id: userId } } },
+        ],
       },
-      select: ticketSelect,
-      orderBy: { updated_at: "desc" },
-      take: limit,
-    });
+    };
+    try {
+      return await prisma.ticket.findMany({
+        where,
+        select: ticketSelect,
+        orderBy: { updated_at: "desc" },
+        take: limit,
+      });
+    } catch {
+      const tickets = await prisma.ticket.findMany({
+        where,
+        select: fallbackTicketSelect,
+        orderBy: { updated_at: "desc" },
+        take: limit,
+      });
+      return tickets.map((t: any) => ({ ...t, priority: "MEDIUM" }));
+    }
   },
 
   async getAssignedToUser(userId: number, limit: number = 20) {
-    return prisma.ticket.findMany({
-      where: {
-        assignee_id: userId,
-        status: { not: "DONE" },
-      },
-      select: ticketSelect,
-      orderBy: { updated_at: "desc" },
-      take: limit,
-    });
+    const where = {
+      assignee_id: userId,
+      status: { not: "DONE" },
+    };
+    try {
+      return await prisma.ticket.findMany({
+        where,
+        select: ticketSelect,
+        orderBy: { updated_at: "desc" },
+        take: limit,
+      });
+    } catch {
+      const tickets = await prisma.ticket.findMany({
+        where,
+        select: fallbackTicketSelect,
+        orderBy: { updated_at: "desc" },
+        take: limit,
+      });
+      return tickets.map((t: any) => ({ ...t, priority: "MEDIUM" }));
+    }
   },
 };

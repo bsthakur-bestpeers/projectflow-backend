@@ -41,7 +41,11 @@ exports.ticketController = {
             res.json({ success: true, data: result });
         }
         catch (error) {
-            next(error);
+            console.error("[listByProject Error]:", error);
+            res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || "Failed to load tickets",
+            });
         }
     },
     async getById(req, res, next) {

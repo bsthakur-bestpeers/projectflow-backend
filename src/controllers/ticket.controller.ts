@@ -36,7 +36,13 @@ export const ticketController = {
       };
       const result = await ticketService.getTickets(projectId, req.user!.userId, filter);
       res.json({ success: true, data: result });
-    } catch (error) { next(error); }
+    } catch (error: any) {
+      console.error("[listByProject Error]:", error);
+      res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || "Failed to load tickets",
+      });
+    }
   },
 
   async getById(req: Request, res: Response, next: NextFunction) {

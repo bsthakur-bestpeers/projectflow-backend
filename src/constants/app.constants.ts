@@ -1,5 +1,5 @@
 export const APP_NAME = "ProjectFlow";
-export const APP_VERSION = "v1.0.1";
+export const APP_VERSION = "v1.0.2";
 
 export const PROJECT_STATUS = ["ACTIVE", "COMPLETED", "ARCHIVED"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUS)[number];
