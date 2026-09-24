@@ -6,5 +6,9 @@ export declare const projectController: {
     update(req: Request, res: Response, next: NextFunction): Promise<void>;
     remove(req: Request, res: Response, next: NextFunction): Promise<void>;
     getSummary(req: Request, res: Response, next: NextFunction): Promise<void>;
+    downloadSampleTemplate(req: Request, res: Response, next: NextFunction): Promise<void>;
+    exportXlsx(req: Request, res: Response, next: NextFunction): Promise<void>;
+    importXlsx(req: Request, res: Response, next: NextFunction): Promise<void>;
+    importIntoProject(req: Request, res: Response, next: NextFunction): Promise<void>;
 };
 //# sourceMappingURL=project.controller.d.ts.map

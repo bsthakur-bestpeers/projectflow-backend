@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.projectController = void 0;
 const project_service_1 = require("../services/project.service");
+const project_excel_service_1 = require("../services/project-excel.service");
 const app_constants_1 = require("../constants/app.constants");
+const error_middleware_1 = require("../middleware/error.middleware");
 exports.projectController = {
     async create(req, res, next) {
         try {
@@ -56,6 +58,54 @@ exports.projectController = {
         try {
             const result = await project_service_1.projectService.getProjectSummary(parseInt(req.params.projectId), req.user.userId);
             res.json({ success: true, data: result });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    async downloadSampleTemplate(req, res, next) {
+        try {
+            await project_excel_service_1.projectExcelService.generateSampleTemplate(res);
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    async exportXlsx(req, res, next) {
+        try {
+            await project_excel_service_1.projectExcelService.exportProject(parseInt(req.params.projectId), req.user.userId, res);
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    async importXlsx(req, res, next) {
+        try {
+            if (!req.file) {
+                throw (0, error_middleware_1.createError)("Please upload an Excel (.xlsx) file.", 400);
+            }
+            const result = await project_excel_service_1.projectExcelService.importProjectFromXlsx(req.user.userId, req.file.path);
+            res.status(201).json({
+                success: true,
+                message: "Project imported successfully.",
+                data: result,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    async importIntoProject(req, res, next) {
+        try {
+            if (!req.file) {
+                throw (0, error_middleware_1.createError)("Please upload an Excel (.xlsx) file.", 400);
+            }
+            const result = await project_excel_service_1.projectExcelService.importProjectFromXlsx(req.user.userId, req.file.path, parseInt(req.params.projectId));
+            res.json({
+                success: true,
+                message: "Data imported into project successfully.",
+                data: result,
+            });
         }
         catch (error) {
             next(error);

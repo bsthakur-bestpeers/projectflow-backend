@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { projectService } from "../services/project.service";
+import { projectExcelService } from "../services/project-excel.service";
 import { DEFAULT_PAGE, DEFAULT_LIMIT } from "../constants/app.constants";
+import { createError } from "../middleware/error.middleware";
 
 export const projectController = {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -51,6 +53,57 @@ export const projectController = {
         parseInt(req.params.projectId), req.user!.userId
       );
       res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+  },
+
+  async downloadSampleTemplate(req: Request, res: Response, next: NextFunction) {
+    try {
+      await projectExcelService.generateSampleTemplate(res);
+    } catch (error) { next(error); }
+  },
+
+  async exportXlsx(req: Request, res: Response, next: NextFunction) {
+    try {
+      await projectExcelService.exportProject(
+        parseInt(req.params.projectId),
+        req.user!.userId,
+        res
+      );
+    } catch (error) { next(error); }
+  },
+
+  async importXlsx(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        throw createError("Please upload an Excel (.xlsx) file.", 400);
+      }
+      const result = await projectExcelService.importProjectFromXlsx(
+        req.user!.userId,
+        req.file.path
+      );
+      res.status(201).json({
+        success: true,
+        message: "Project imported successfully.",
+        data: result,
+      });
+    } catch (error) { next(error); }
+  },
+
+  async importIntoProject(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        throw createError("Please upload an Excel (.xlsx) file.", 400);
+      }
+      const result = await projectExcelService.importProjectFromXlsx(
+        req.user!.userId,
+        req.file.path,
+        parseInt(req.params.projectId)
+      );
+      res.json({
+        success: true,
+        message: "Data imported into project successfully.",
+        data: result,
+      });
     } catch (error) { next(error); }
   },
 };

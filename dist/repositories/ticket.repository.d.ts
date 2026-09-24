@@ -54,9 +54,9 @@ export declare const ticketRepository: {
         title: string;
         priority: string;
         estimation: string | null;
-        position: number;
         author_id: number;
         assignee_id: number | null;
+        position: number;
         author: {
             id: number;
             email: string;
@@ -86,9 +86,9 @@ export declare const ticketRepository: {
         title: string;
         priority: string;
         estimation: string | null;
-        position: number;
         author_id: number;
         assignee_id: number | null;
+        position: number;
         author: {
             id: number;
             email: string;
@@ -124,9 +124,9 @@ export declare const ticketRepository: {
         sprint_id: number | null;
         title: string;
         estimation: string | null;
-        position: number;
         author_id: number;
         assignee_id: number | null;
+        position: number;
         author: {
             id: number;
             email: string;
@@ -149,9 +149,9 @@ export declare const ticketRepository: {
         title: string;
         priority: string;
         estimation: string | null;
-        position: number;
         author_id: number;
         assignee_id: number | null;
+        position: number;
     }>;
     moveTicket(ticketId: number, data: MoveTicketData, projectId: number): Promise<{
         priority: any;
@@ -171,9 +171,9 @@ export declare const ticketRepository: {
         sprint_id: number | null;
         title: string;
         estimation: string | null;
-        position: number;
         author_id: number;
         assignee_id: number | null;
+        position: number;
         author: {
             id: number;
             email: string;
