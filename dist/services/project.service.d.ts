@@ -112,6 +112,8 @@ export declare const projectService: {
         };
         summary: {
             total: number;
+            backlog: number;
+            BACKLOG: number;
             TODO: number;
             IN_PROGRESS: number;
             IN_REVIEW: number;

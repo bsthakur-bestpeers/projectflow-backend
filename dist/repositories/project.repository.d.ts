@@ -120,6 +120,8 @@ export declare const projectRepository: {
     }>;
     getTicketSummary(projectId: number): Promise<{
         total: number;
+        backlog: number;
+        BACKLOG: number;
         TODO: number;
         IN_PROGRESS: number;
         IN_REVIEW: number;
