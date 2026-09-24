@@ -91,14 +91,14 @@ exports.projectRepository = {
         });
     },
     async getTicketSummary(projectId) {
-        const [total, backlog, todo, inProgress, inReview, done] = await prisma_1.default.$transaction([
-            prisma_1.default.ticket.count({ where: { project_id: projectId } }),
+        const [backlog, todo, inProgress, inReview, done] = await prisma_1.default.$transaction([
             prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: null, status: { not: "DONE" } } }),
             prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "TODO" } }),
             prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "IN_PROGRESS" } }),
             prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "IN_REVIEW" } }),
-            prisma_1.default.ticket.count({ where: { project_id: projectId, status: "DONE" } }),
+            prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "DONE" } }),
         ]);
+        const total = backlog + todo + inProgress + inReview + done;
         return {
             total,
             backlog,
