@@ -7,6 +7,7 @@ export declare const projectController: {
     remove(req: Request, res: Response, next: NextFunction): Promise<void>;
     getSummary(req: Request, res: Response, next: NextFunction): Promise<void>;
     downloadSampleTemplate(req: Request, res: Response, next: NextFunction): Promise<void>;
+    exportMultiple(req: Request, res: Response, next: NextFunction): Promise<void>;
     exportXlsx(req: Request, res: Response, next: NextFunction): Promise<void>;
     importXlsx(req: Request, res: Response, next: NextFunction): Promise<void>;
     importIntoProject(req: Request, res: Response, next: NextFunction): Promise<void>;

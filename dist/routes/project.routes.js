@@ -31,6 +31,8 @@ const excelUpload = (0, multer_1.default)({
 router.use(auth_middleware_1.authenticate);
 // Sample template download (must be before :projectId)
 router.get("/sample-template", project_controller_1.projectController.downloadSampleTemplate);
+// Multi-project export (must be before :projectId)
+router.get("/export", project_controller_1.projectController.exportMultiple);
 // Project Import (creates a new project from XLSX)
 router.post("/import", excelUpload.single("file"), project_controller_1.projectController.importXlsx);
 router.post("/", project_validator_1.createProjectValidator, validate_middleware_1.validate, project_controller_1.projectController.create);

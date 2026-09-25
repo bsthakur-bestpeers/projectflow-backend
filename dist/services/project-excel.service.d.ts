@@ -5,9 +5,10 @@ export declare const projectExcelService: {
      */
     generateSampleTemplate(res: Response): Promise<void>;
     /**
-     * Memory-efficient streaming export of an entire project to XLSX.
+     * Memory-efficient streaming export of one or multiple projects to XLSX.
      * Streams row-by-row directly into Express response object without buffer accumulation in RAM.
      */
+    exportProjects(projectIds: number[], userId: number, res: Response): Promise<void>;
     exportProject(projectId: number, userId: number, res: Response): Promise<void>;
     /**
      * Imports a new Project or into an existing project from an uploaded XLSX file.

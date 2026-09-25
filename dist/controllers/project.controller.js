@@ -71,6 +71,29 @@ exports.projectController = {
             next(error);
         }
     },
+    async exportMultiple(req, res, next) {
+        try {
+            const { projectIds } = req.query;
+            let ids = [];
+            if (typeof projectIds === "string" && projectIds.trim().length > 0) {
+                ids = projectIds
+                    .split(",")
+                    .map((id) => parseInt(id.trim()))
+                    .filter((n) => !isNaN(n) && n > 0);
+            }
+            if (ids.length === 0) {
+                const result = await project_service_1.projectService.getProjects(req.user.userId, 1, 1000);
+                ids = result.projects.map((p) => p.id);
+            }
+            if (ids.length === 0) {
+                throw (0, error_middleware_1.createError)("No projects available to export.", 400);
+            }
+            await project_excel_service_1.projectExcelService.exportProjects(ids, req.user.userId, res);
+        }
+        catch (error) {
+            next(error);
+        }
+    },
     async exportXlsx(req, res, next) {
         try {
             await project_excel_service_1.projectExcelService.exportProject(parseInt(req.params.projectId), req.user.userId, res);

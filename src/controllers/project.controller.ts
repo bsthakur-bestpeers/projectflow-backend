@@ -62,6 +62,27 @@ export const projectController = {
     } catch (error) { next(error); }
   },
 
+  async exportMultiple(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { projectIds } = req.query;
+      let ids: number[] = [];
+      if (typeof projectIds === "string" && projectIds.trim().length > 0) {
+        ids = projectIds
+          .split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((n) => !isNaN(n) && n > 0);
+      }
+      if (ids.length === 0) {
+        const result = await projectService.getProjects(req.user!.userId, 1, 1000);
+        ids = result.projects.map((p: any) => p.id);
+      }
+      if (ids.length === 0) {
+        throw createError("No projects available to export.", 400);
+      }
+      await projectExcelService.exportProjects(ids, req.user!.userId, res);
+    } catch (error) { next(error); }
+  },
+
   async exportXlsx(req: Request, res: Response, next: NextFunction) {
     try {
       await projectExcelService.exportProject(

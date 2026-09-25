@@ -38,6 +38,9 @@ router.use(authenticate);
 // Sample template download (must be before :projectId)
 router.get("/sample-template", projectController.downloadSampleTemplate);
 
+// Multi-project export (must be before :projectId)
+router.get("/export", projectController.exportMultiple);
+
 // Project Import (creates a new project from XLSX)
 router.post("/import", excelUpload.single("file"), projectController.importXlsx);
 

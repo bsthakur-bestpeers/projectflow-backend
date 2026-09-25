@@ -96,7 +96,7 @@ exports.projectRepository = {
             prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "TODO" } }),
             prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "IN_PROGRESS" } }),
             prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "IN_REVIEW" } }),
-            prisma_1.default.ticket.count({ where: { project_id: projectId, sprint_id: { not: null }, status: "DONE" } }),
+            prisma_1.default.ticket.count({ where: { project_id: projectId, status: "DONE" } }),
         ]);
         const total = backlog + todo + inProgress + inReview + done;
         return {
