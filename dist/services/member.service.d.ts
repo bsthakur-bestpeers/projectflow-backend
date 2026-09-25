@@ -14,6 +14,13 @@ export declare const memberService: {
         email: string;
         full_name: string;
     }>;
+    addMembers(projectId: number, requestingUserId: number, targetEmails: string[]): Promise<{
+        added: any[];
+        errors: {
+            email: string;
+            error: string;
+        }[];
+    }>;
     removeMember(projectId: number, requestingUserId: number, targetUserId: number): Promise<void>;
 };
 //# sourceMappingURL=member.service.d.ts.map

@@ -38,13 +38,22 @@ exports.loginValidator = [
 ];
 exports.addMemberValidator = [
     (0, express_validator_1.param)("projectId").isInt({ min: 1 }).withMessage("Invalid project ID"),
-    (0, express_validator_1.body)("email")
-        .trim()
-        .notEmpty()
-        .withMessage("User email is required")
-        .isEmail()
-        .withMessage("Must be a valid email address")
-        .normalizeEmail(),
+    (0, express_validator_1.body)().custom((body) => {
+        if (!body.email && (!body.emails || !Array.isArray(body.emails) || body.emails.length === 0)) {
+            throw new Error("User email or emails list is required");
+        }
+        if (body.email && (typeof body.email !== "string" || !/\S+@\S+\.\S+/.test(body.email))) {
+            throw new Error("Must be a valid email address");
+        }
+        if (body.emails && Array.isArray(body.emails)) {
+            for (const e of body.emails) {
+                if (typeof e !== "string" || !/\S+@\S+\.\S+/.test(e)) {
+                    throw new Error(`Invalid email address: ${e}`);
+                }
+            }
+        }
+        return true;
+    }),
 ];
 exports.removeMemberValidator = [
     (0, express_validator_1.param)("projectId").isInt({ min: 1 }).withMessage("Invalid project ID"),

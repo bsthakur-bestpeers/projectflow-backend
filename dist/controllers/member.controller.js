@@ -14,7 +14,18 @@ exports.memberController = {
     },
     async add(req, res, next) {
         try {
-            const member = await member_service_1.memberService.addMember(parseInt(req.params.projectId), req.user.userId, req.body.email);
+            const projectId = parseInt(req.params.projectId);
+            const { email, emails } = req.body;
+            if (emails && Array.isArray(emails)) {
+                const result = await member_service_1.memberService.addMembers(projectId, req.user.userId, emails);
+                return res.status(201).json({
+                    success: true,
+                    data: result.added,
+                    errors: result.errors,
+                    message: `${result.added.length} member(s) added successfully.`,
+                });
+            }
+            const member = await member_service_1.memberService.addMember(projectId, req.user.userId, email);
             res.status(201).json({ success: true, data: member });
         }
         catch (error) {

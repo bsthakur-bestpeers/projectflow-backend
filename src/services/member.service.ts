@@ -47,6 +47,55 @@ export const memberService = {
     };
   },
 
+  async addMembers(projectId: number, requestingUserId: number, targetEmails: string[]) {
+    const project = await projectRepository.findById(projectId);
+    if (!project) throw createError("Project not found.", 404);
+    if (project.created_by !== requestingUserId) {
+      throw createError("Only the project owner can add members.", 403);
+    }
+
+    const added: any[] = [];
+    const errors: { email: string; error: string }[] = [];
+
+    // Filter unique emails
+    const uniqueEmails = Array.from(new Set(targetEmails.map((e) => e.trim().toLowerCase()))).filter(Boolean);
+
+    for (const email of uniqueEmails) {
+      const targetUser = await userRepository.findByEmail(email);
+      if (!targetUser) {
+        errors.push({ email, error: "No user found with that email address." });
+        continue;
+      }
+      if (!targetUser.is_active) {
+        errors.push({ email, error: "This user account is inactive." });
+        continue;
+      }
+      if (targetUser.role === "ADMIN") {
+        errors.push({ email, error: "Administrators cannot be added as project members." });
+        continue;
+      }
+
+      const existing = await memberRepository.findMembership(targetUser.id, projectId);
+      if (existing) {
+        errors.push({ email, error: "User is already a member." });
+        continue;
+      }
+
+      const membership = await memberRepository.addMember(targetUser.id, projectId);
+      added.push({
+        ...membership.user,
+        joined_at: membership.created_at,
+        is_owner: membership.user.id === project.created_by,
+      });
+    }
+
+    if (added.length === 0 && errors.length > 0) {
+      throw createError(errors.map((e) => `${e.email}: ${e.error}`).join("; "), 400);
+    }
+
+    return { added, errors };
+  },
+
   async removeMember(projectId: number, requestingUserId: number, targetUserId: number) {
     const project = await projectRepository.findById(projectId);
     if (!project) throw createError("Project not found.", 404);

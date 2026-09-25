@@ -47,6 +47,48 @@ exports.memberService = {
             is_owner: membership.user.id === project.created_by,
         };
     },
+    async addMembers(projectId, requestingUserId, targetEmails) {
+        const project = await project_repository_1.projectRepository.findById(projectId);
+        if (!project)
+            throw (0, error_middleware_1.createError)("Project not found.", 404);
+        if (project.created_by !== requestingUserId) {
+            throw (0, error_middleware_1.createError)("Only the project owner can add members.", 403);
+        }
+        const added = [];
+        const errors = [];
+        // Filter unique emails
+        const uniqueEmails = Array.from(new Set(targetEmails.map((e) => e.trim().toLowerCase()))).filter(Boolean);
+        for (const email of uniqueEmails) {
+            const targetUser = await user_repository_1.userRepository.findByEmail(email);
+            if (!targetUser) {
+                errors.push({ email, error: "No user found with that email address." });
+                continue;
+            }
+            if (!targetUser.is_active) {
+                errors.push({ email, error: "This user account is inactive." });
+                continue;
+            }
+            if (targetUser.role === "ADMIN") {
+                errors.push({ email, error: "Administrators cannot be added as project members." });
+                continue;
+            }
+            const existing = await member_repository_1.memberRepository.findMembership(targetUser.id, projectId);
+            if (existing) {
+                errors.push({ email, error: "User is already a member." });
+                continue;
+            }
+            const membership = await member_repository_1.memberRepository.addMember(targetUser.id, projectId);
+            added.push({
+                ...membership.user,
+                joined_at: membership.created_at,
+                is_owner: membership.user.id === project.created_by,
+            });
+        }
+        if (added.length === 0 && errors.length > 0) {
+            throw (0, error_middleware_1.createError)(errors.map((e) => `${e.email}: ${e.error}`).join("; "), 400);
+        }
+        return { added, errors };
+    },
     async removeMember(projectId, requestingUserId, targetUserId) {
         const project = await project_repository_1.projectRepository.findById(projectId);
         if (!project)
