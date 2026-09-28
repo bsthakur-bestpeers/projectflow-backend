@@ -86,6 +86,54 @@ function formatDateStr(d) {
         return String(d);
     return dateObj.toISOString().slice(0, 10);
 }
+function extractAttachmentUrls(description) {
+    if (!description)
+        return "";
+    const urls = [];
+    const seen = new Set();
+    // 1. Try parsing from data-attachments attribute
+    const dataMatch = description.match(/data-attachments=['"]([^'"]+)['"]/);
+    if (dataMatch && dataMatch[1]) {
+        try {
+            let raw = dataMatch[1];
+            if (raw.includes("&quot;")) {
+                raw = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+            }
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                parsed.forEach((f) => {
+                    if (f && f.url && !seen.has(f.url)) {
+                        seen.add(f.url);
+                        urls.push(f.url);
+                    }
+                });
+            }
+        }
+        catch { }
+    }
+    // 2. Regex match any href or src containing /uploads/
+    const linkMatches = description.matchAll(/(?:href|src)=['"]([^'"]*\/uploads\/[^'"]*)['"]/gi);
+    for (const m of linkMatches) {
+        const url = m[1];
+        if (url && !seen.has(url)) {
+            seen.add(url);
+            urls.push(url);
+        }
+    }
+    return urls.join(", ");
+}
+function cleanDescriptionText(description) {
+    if (!description)
+        return "";
+    return description
+        .replace(/<div data-attachments=[^>]*>[\s\S]*?<\/div>/gi, "")
+        .replace(/<a[^>]*href=['"][^'"]*\/uploads\/[^'"]*['"][^>]*>[\s\S]*?<\/a>/gi, "")
+        .replace(/<img[^>]*>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
 exports.projectExcelService = {
     /**
      * Generates and streams a downloadable sample XLSX template with instructions & sample data.
@@ -163,6 +211,7 @@ exports.projectExcelService = {
         ticketSheet.columns = [
             { header: "Title", key: "title", width: 35 },
             { header: "Description", key: "description", width: 45 },
+            { header: "Attachment", key: "attachment", width: 45 },
             { header: "Status (TODO / IN_PROGRESS / IN_REVIEW / DONE)", key: "status", width: 40 },
             { header: "Priority (HIGH / MEDIUM / LOW)", key: "priority", width: 30 },
             { header: "Estimation (e.g. 2h, 1.5d)", key: "estimation", width: 25 },
@@ -173,6 +222,7 @@ exports.projectExcelService = {
         ticketSheet.addRow({
             title: "Implement OAuth Login API",
             description: "Support Google and GitHub OAuth authentication flow.",
+            attachment: "https://projectflow.dev/uploads/oauth-architecture-spec.png",
             status: "TODO",
             priority: "HIGH",
             estimation: "2d",
@@ -182,6 +232,7 @@ exports.projectExcelService = {
         ticketSheet.addRow({
             title: "Write Swagger API Documentation",
             description: "Complete OpenAPI 3.0 documentation for all public endpoints.",
+            attachment: "",
             status: "TODO",
             priority: "LOW",
             estimation: "4h",
@@ -191,6 +242,7 @@ exports.projectExcelService = {
         ticketSheet.addRow({
             title: "Build Kanban Board Drag-and-Drop",
             description: "Smooth dnd-kit columns with optimistic updates.",
+            attachment: "https://projectflow.dev/uploads/kanban-wireframe.png",
             status: "TODO",
             priority: "MEDIUM",
             estimation: "3d",
@@ -316,6 +368,7 @@ exports.projectExcelService = {
             { header: "ID", key: "id", width: 10 },
             { header: "Title", key: "title", width: 36 },
             { header: "Description", key: "description", width: 45 },
+            { header: "Attachment", key: "attachment", width: 45 },
             { header: "Status", key: "status", width: 16 },
             { header: "Priority", key: "priority", width: 14 },
             { header: "Estimation", key: "estimation", width: 14 },
@@ -339,7 +392,8 @@ exports.projectExcelService = {
             const row = ticketSheet.addRow({
                 id: t.id,
                 title: t.title,
-                description: t.description || "",
+                description: cleanDescriptionText(t.description),
+                attachment: extractAttachmentUrls(t.description),
                 status: t.status,
                 priority: t.priority,
                 estimation: t.estimation || "",
@@ -518,6 +572,8 @@ exports.projectExcelService = {
                                 ticketHeaderMap["title"] = colNumber;
                             else if (h.includes("desc"))
                                 ticketHeaderMap["desc"] = colNumber;
+                            else if (h.includes("attach"))
+                                ticketHeaderMap["attachment"] = colNumber;
                             else if (h.includes("status"))
                                 ticketHeaderMap["status"] = colNumber;
                             else if (h.includes("prior"))
@@ -536,7 +592,16 @@ exports.projectExcelService = {
                     const title = ticketHeaderMap["title"] ? String(row.getCell(ticketHeaderMap["title"]).value || "").trim() : "";
                     if (!title)
                         return;
-                    const desc = ticketHeaderMap["desc"] ? String(row.getCell(ticketHeaderMap["desc"]).value || "").trim() : "";
+                    let desc = ticketHeaderMap["desc"] ? String(row.getCell(ticketHeaderMap["desc"]).value || "").trim() : "";
+                    const attachmentUrl = ticketHeaderMap["attachment"] ? String(row.getCell(ticketHeaderMap["attachment"]).value || "").trim() : "";
+                    if (attachmentUrl) {
+                        const urls = attachmentUrl.split(/,\s*/).map((u) => u.trim()).filter(Boolean);
+                        const attachObjs = urls.map((u) => {
+                            const fname = u.split("/").pop() || "attachment";
+                            return { url: u, filename: fname, originalName: fname, mimetype: "application/octet-stream", size: 0 };
+                        });
+                        desc = `${desc ? `<p>${desc}</p>` : ""}<div data-attachments='${JSON.stringify(attachObjs)}' style="display:none"></div>`;
+                    }
                     const rawStatus = ticketHeaderMap["status"] ? String(row.getCell(ticketHeaderMap["status"]).value || "").trim().toUpperCase() : "TODO";
                     const rawPriority = ticketHeaderMap["priority"] ? String(row.getCell(ticketHeaderMap["priority"]).value || "").trim().toUpperCase() : "MEDIUM";
                     const estimation = ticketHeaderMap["estimation"] ? String(row.getCell(ticketHeaderMap["estimation"]).value || "").trim() : "";
