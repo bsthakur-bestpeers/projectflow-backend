@@ -77,6 +77,10 @@ export const projectExcelService = {
   /**
    * Generates and streams a downloadable sample XLSX template with instructions & sample data.
    */
+  /**
+   * Generates and streams a downloadable sample XLSX template for a single project.
+   * Project-specific structure: Sheet 1 (Project Info), Sheet 2 (Sprints), Sheet 3 (Tickets).
+   */
   async generateSampleTemplate(res: Response): Promise<void> {
     res.setHeader("Content-Disposition", 'attachment; filename="ProjectFlow_Sample_Template.xlsx"');
     res.setHeader(
@@ -85,71 +89,75 @@ export const projectExcelService = {
     );
 
     const workbook = new ExcelJS.Workbook();
+    workbook.creator = "ProjectFlow";
+    workbook.created = new Date();
 
-    // 1. Project Info Sheet
+    const headerFill: ExcelJS.Fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF4F46E5" }, // ProjectFlow brand Indigo
+    };
+
+    const headerFont: Partial<ExcelJS.Font> = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+      size: 11,
+      name: "Calibri",
+    };
+
+    const applyHeaderStyle = (sheet: ExcelJS.Worksheet) => {
+      const headerRow = sheet.getRow(1);
+      headerRow.height = 26;
+      headerRow.eachCell((cell) => {
+        cell.fill = headerFill;
+        cell.font = headerFont;
+        cell.alignment = { vertical: "middle", horizontal: "left" };
+      });
+    };
+
+    // 1. Project Info Sheet - single project definition
     const infoSheet = workbook.addWorksheet("Project Info", {
       views: [{ showGridLines: true }],
     });
     infoSheet.columns = [
-      { header: "Project Name", key: "name", width: 30 },
+      { header: "Project Name", key: "name", width: 32 },
       { header: "Description", key: "description", width: 50 },
     ];
-    infoSheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    infoSheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FF4F46E5" }, // Indigo
-    };
+    applyHeaderStyle(infoSheet);
     infoSheet.addRow({
       name: "Sample Fintech Platform",
       description: "Core banking platform modern architecture with microservices.",
     });
 
-    // 2. Sprints Sheet
+    // 2. Sprints Sheet - project specific sprints (no redundant Project Name column)
     const sprintSheet = workbook.addWorksheet("Sprints", {
       views: [{ showGridLines: true }],
     });
     sprintSheet.columns = [
-      { header: "Project Name", key: "project_name", width: 25 },
       { header: "Sprint Name", key: "name", width: 30 },
       { header: "Start Date (YYYY-MM-DD)", key: "start_date", width: 25, style: { numFmt: "yyyy-mm-dd" } },
       { header: "End Date (YYYY-MM-DD)", key: "end_date", width: 25, style: { numFmt: "yyyy-mm-dd" } },
       { header: "Status (PLANNED / ACTIVE / COMPLETED)", key: "status", width: 35 },
     ];
-    sprintSheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    sprintSheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FF4F46E5" },
-    };
+    applyHeaderStyle(sprintSheet);
     sprintSheet.addRow({
-      project_name: "Sample Fintech Platform",
       name: "Sprint 1 - Foundation",
       start_date: "2026-10-01",
       end_date: "2026-10-14",
       status: "ACTIVE",
     });
     sprintSheet.addRow({
-      project_name: "Sample Fintech Platform",
       name: "Sprint 2 - Payment Gateway",
       start_date: "2026-10-15",
       end_date: "2026-10-28",
       status: "PLANNED",
     });
-    sprintSheet.addRow({
-      project_name: "E-Commerce Store",
-      name: "Sprint 1 - Checkout Flow",
-      start_date: "2026-10-01",
-      end_date: "2026-10-14",
-      status: "ACTIVE",
-    });
 
-    // 3. Tickets Sheet
+    // 3. Tickets Sheet - project specific tickets (no redundant Project Name column)
     const ticketSheet = workbook.addWorksheet("Tickets", {
       views: [{ showGridLines: true }],
     });
     ticketSheet.columns = [
-      { header: "Project Name", key: "project_name", width: 25 },
       { header: "Title", key: "title", width: 35 },
       { header: "Description", key: "description", width: 45 },
       { header: "Status (TODO / IN_PROGRESS / IN_REVIEW / DONE)", key: "status", width: 40 },
@@ -158,14 +166,8 @@ export const projectExcelService = {
       { header: "Sprint Name (Leave empty for Backlog)", key: "sprint_name", width: 35 },
       { header: "Assignee Email", key: "assignee_email", width: 30 },
     ];
-    ticketSheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    ticketSheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FF4F46E5" },
-    };
+    applyHeaderStyle(ticketSheet);
     ticketSheet.addRow({
-      project_name: "Sample Fintech Platform",
       title: "Implement OAuth Login API",
       description: "Support Google and GitHub OAuth authentication flow.",
       status: "DONE",
@@ -175,17 +177,15 @@ export const projectExcelService = {
       assignee_email: "alice@projectflow.dev",
     });
     ticketSheet.addRow({
-      project_name: "Sample Fintech Platform",
       title: "Write Swagger API Documentation",
       description: "Complete OpenAPI 3.0 documentation for all public endpoints.",
       status: "TODO",
       priority: "LOW",
       estimation: "4h",
-      sprint_name: "", // Backlog ticket for Sample Fintech Platform
+      sprint_name: "",
       assignee_email: "",
     });
     ticketSheet.addRow({
-      project_name: "Sample Fintech Platform",
       title: "Build Kanban Board Drag-and-Drop",
       description: "Smooth dnd-kit columns with optimistic updates.",
       status: "TODO",
@@ -194,40 +194,19 @@ export const projectExcelService = {
       sprint_name: "Sprint 2 - Payment Gateway",
       assignee_email: "",
     });
-    ticketSheet.addRow({
-      project_name: "E-Commerce Store",
-      title: "Build Product Catalog UI",
-      description: "Responsive grid with filtering and search.",
-      status: "IN_PROGRESS",
-      priority: "HIGH",
-      estimation: "3d",
-      sprint_name: "Sprint 1 - Checkout Flow",
-      assignee_email: "bob@projectflow.dev",
-    });
-    ticketSheet.addRow({
-      project_name: "E-Commerce Store",
-      title: "Cart Abandonment Email System",
-      description: "Trigger automated follow-up emails after 2 hours of inactivity.",
-      status: "TODO",
-      priority: "MEDIUM",
-      estimation: "1.5d",
-      sprint_name: "", // Backlog ticket for E-Commerce Store
-      assignee_email: "",
-    });
 
     await workbook.xlsx.write(res);
     res.end();
   },
 
   /**
-   * Generates a beautifully formatted XLSX export of one or multiple projects.
-   * Uses identical tabular structure, column definitions, and ProjectFlow brand styling
-   * whether exporting a single project or multiple projects.
+   * Generates a beautifully formatted, project-specific XLSX export for a single project.
+   * All sheets (Project Info, Sprints, Tickets) are dedicated to this project.
    */
-  async exportProjects(projectIds: number[], userId: number, res: Response): Promise<void> {
-    const projects = await prisma.project.findMany({
+  async exportProject(projectId: number, userId: number, res: Response): Promise<void> {
+    const project = await prisma.project.findFirst({
       where: {
-        id: { in: projectIds },
+        id: projectId,
         OR: [
           { created_by: userId },
           { members: { some: { user_id: userId } } },
@@ -236,15 +215,11 @@ export const projectExcelService = {
       include: {
         owner: { select: { id: true, full_name: true, email: true } },
       },
-      orderBy: { id: "asc" },
     });
 
-    if (projects.length === 0) throw createError("No accessible projects found.", 404);
+    if (!project) throw createError("Project not found or accessible.", 404);
 
-    const safeFilename =
-      projects.length === 1
-        ? `${projects[0].name.replace(/[^a-zA-Z0-9_-]/g, "_")}_Export.xlsx`
-        : `Projects_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const safeFilename = `${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_Export.xlsx`;
 
     res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
     res.setHeader(
@@ -279,7 +254,7 @@ export const projectExcelService = {
       });
     };
 
-    // 1. Project Info Sheet - Consistent tabular format for 1 or multiple projects
+    // 1. Project Info Sheet - details of this specific project
     const infoSheet = workbook.addWorksheet("Project Info", {
       views: [{ showGridLines: true }],
     });
@@ -292,25 +267,22 @@ export const projectExcelService = {
     ];
     applyHeaderStyle(infoSheet);
 
-    for (const p of projects) {
-      const row = infoSheet.addRow({
-        id: p.id,
-        name: p.name,
-        description: p.description || "N/A",
-        owner: p.owner ? `${p.owner.full_name} (${p.owner.email})` : "N/A",
-        created_at: formatDateStr(p.created_at),
-      });
-      row.height = 22;
-      row.alignment = { vertical: "middle", horizontal: "left" };
-    }
+    const infoRow = infoSheet.addRow({
+      id: project.id,
+      name: project.name,
+      description: project.description || "N/A",
+      owner: project.owner ? `${project.owner.full_name} (${project.owner.email})` : "N/A",
+      created_at: formatDateStr(project.created_at),
+    });
+    infoRow.height = 22;
+    infoRow.alignment = { vertical: "middle", horizontal: "left" };
 
-    // 2. Sprints Sheet
+    // 2. Sprints Sheet - sprints for this specific project (no redundant Project Name column)
     const sprintSheet = workbook.addWorksheet("Sprints", {
       views: [{ showGridLines: true }],
     });
     sprintSheet.columns = [
       { header: "ID", key: "id", width: 10 },
-      { header: "Project Name", key: "project_name", width: 28 },
       { header: "Sprint Name", key: "name", width: 30 },
       { header: "Start Date", key: "start_date", width: 18, style: { numFmt: "yyyy-mm-dd" } },
       { header: "End Date", key: "end_date", width: 18, style: { numFmt: "yyyy-mm-dd" } },
@@ -319,9 +291,8 @@ export const projectExcelService = {
     applyHeaderStyle(sprintSheet);
 
     const sprints = await prisma.sprint.findMany({
-      where: { project_id: { in: projects.map((p) => p.id) } },
-      include: { project: { select: { name: true } } },
-      orderBy: [{ project_id: "asc" }, { id: "asc" }],
+      where: { project_id: project.id },
+      orderBy: { id: "asc" },
     });
 
     const nowTs = Date.now();
@@ -341,7 +312,6 @@ export const projectExcelService = {
 
       const row = sprintSheet.addRow({
         id: s.id,
-        project_name: s.project?.name || `Project #${s.project_id}`,
         name: s.name || `Sprint #${s.id}`,
         start_date: formatDateStr(s.start_date),
         end_date: formatDateStr(s.end_date),
@@ -351,13 +321,12 @@ export const projectExcelService = {
       row.alignment = { vertical: "middle", horizontal: "left" };
     }
 
-    // 3. Tickets Sheet
+    // 3. Tickets Sheet - tickets for this specific project (no redundant Project Name column)
     const ticketSheet = workbook.addWorksheet("Tickets", {
       views: [{ showGridLines: true }],
     });
     ticketSheet.columns = [
       { header: "ID", key: "id", width: 10 },
-      { header: "Project Name", key: "project_name", width: 28 },
       { header: "Title", key: "title", width: 36 },
       { header: "Description", key: "description", width: 45 },
       { header: "Status", key: "status", width: 16 },
@@ -371,12 +340,9 @@ export const projectExcelService = {
     ];
     applyHeaderStyle(ticketSheet);
 
-    const projectMap = new Map<number, string>();
-    projects.forEach((p) => projectMap.set(p.id, p.name));
-
     const tickets: any[] = await prisma.ticket.findMany({
-      where: { project_id: { in: projects.map((p) => p.id) } },
-      orderBy: [{ project_id: "asc" }, { id: "asc" }],
+      where: { project_id: project.id },
+      orderBy: { id: "asc" },
       include: {
         sprint: { select: { name: true, id: true } },
         assignee: { select: { full_name: true, email: true } },
@@ -387,7 +353,6 @@ export const projectExcelService = {
     for (const t of tickets) {
       const row = ticketSheet.addRow({
         id: t.id,
-        project_name: projectMap.get(t.project_id) || `Project #${t.project_id}`,
         title: t.title,
         description: t.description || "",
         status: t.status,
@@ -407,8 +372,12 @@ export const projectExcelService = {
     res.end();
   },
 
-  async exportProject(projectId: number, userId: number, res: Response): Promise<void> {
-    return this.exportProjects([projectId], userId, res);
+  async exportProjects(projectIds: number[], userId: number, res: Response): Promise<void> {
+    if (!projectIds || projectIds.length === 0) {
+      throw createError("Project ID is required.", 400);
+    }
+    // Always project-specific export (takes the target project ID)
+    return this.exportProject(projectIds[0], userId, res);
   },
 
   /**
@@ -516,12 +485,12 @@ export const projectExcelService = {
             return;
           }
 
-          const sName = String(row.getCell(headerMap["name"] || 1).value || "").trim();
+          const sName = headerMap["name"] ? String(row.getCell(headerMap["name"]).value || "").trim() : "";
           if (!sName) return;
 
-          const startVal = row.getCell(headerMap["start"] || 2).value;
-          const endVal = row.getCell(headerMap["end"] || 3).value;
-          const statusVal = String(row.getCell(headerMap["status"] || 4).value || "").trim().toUpperCase();
+          const startVal = headerMap["start"] ? row.getCell(headerMap["start"]).value : null;
+          const endVal = headerMap["end"] ? row.getCell(headerMap["end"]).value : null;
+          const statusVal = headerMap["status"] ? String(row.getCell(headerMap["status"]).value || "").trim().toUpperCase() : "PLANNED";
 
           const now = new Date();
           const startDate = parseExcelDate(startVal, now);
@@ -579,15 +548,15 @@ export const projectExcelService = {
             return;
           }
 
-          const title = String(row.getCell(ticketHeaderMap["title"] || 1).value || "").trim();
+          const title = ticketHeaderMap["title"] ? String(row.getCell(ticketHeaderMap["title"]).value || "").trim() : "";
           if (!title) return;
 
-          const desc = String(row.getCell(ticketHeaderMap["desc"] || 2).value || "").trim();
-          const rawStatus = String(row.getCell(ticketHeaderMap["status"] || 3).value || "").trim().toUpperCase();
-          const rawPriority = String(row.getCell(ticketHeaderMap["priority"] || 4).value || "").trim().toUpperCase();
-          const estimation = String(row.getCell(ticketHeaderMap["estimation"] || 5).value || "").trim();
-          const sprintName = String(row.getCell(ticketHeaderMap["sprint"] || 6).value || "").trim();
-          const assigneeEmail = String(row.getCell(ticketHeaderMap["assignee"] || 7).value || "").trim().toLowerCase();
+          const desc = ticketHeaderMap["desc"] ? String(row.getCell(ticketHeaderMap["desc"]).value || "").trim() : "";
+          const rawStatus = ticketHeaderMap["status"] ? String(row.getCell(ticketHeaderMap["status"]).value || "").trim().toUpperCase() : "TODO";
+          const rawPriority = ticketHeaderMap["priority"] ? String(row.getCell(ticketHeaderMap["priority"]).value || "").trim().toUpperCase() : "MEDIUM";
+          const estimation = ticketHeaderMap["estimation"] ? String(row.getCell(ticketHeaderMap["estimation"]).value || "").trim() : "";
+          const sprintName = ticketHeaderMap["sprint"] ? String(row.getCell(ticketHeaderMap["sprint"]).value || "").trim() : "";
+          const assigneeEmail = ticketHeaderMap["assignee"] ? String(row.getCell(ticketHeaderMap["assignee"]).value || "").trim().toLowerCase() : "";
 
           const validStatuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
           const validPriorities = ["HIGH", "MEDIUM", "LOW"];
