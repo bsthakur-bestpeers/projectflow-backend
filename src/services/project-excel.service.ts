@@ -220,8 +220,9 @@ export const projectExcelService = {
   },
 
   /**
-   * Memory-efficient streaming export of one or multiple projects to XLSX.
-   * Streams row-by-row directly into Express response object without buffer accumulation in RAM.
+   * Generates a beautifully formatted XLSX export of one or multiple projects.
+   * Uses identical tabular structure, column definitions, and ProjectFlow brand styling
+   * whether exporting a single project or multiple projects.
    */
   async exportProjects(projectIds: number[], userId: number, res: Response): Promise<void> {
     const projects = await prisma.project.findMany({
@@ -251,47 +252,78 @@ export const projectExcelService = {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 
-    // Using streaming WorkbookWriter: writes directly to response stream
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
-      stream: res,
-      useStyles: true,
-      useSharedStrings: true,
-    });
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "ProjectFlow";
+    workbook.created = new Date();
 
-    // 1. Project Info Sheet
-    const infoSheet = workbook.addWorksheet("Project Info");
-    if (projects.length === 1) {
-      const project = projects[0];
-      infoSheet.addRow(["Property", "Value"]).commit();
-      infoSheet.addRow(["Project Name", project.name]).commit();
-      infoSheet.addRow(["Description", project.description || "N/A"]).commit();
-      infoSheet.addRow(["Owner", `${project.owner.full_name} (${project.owner.email})`]).commit();
-      infoSheet.addRow(["Created Date", formatDateStr(project.created_at)]).commit();
-    } else {
-      infoSheet.addRow(["ID", "Project Name", "Description", "Owner", "Created Date"]).commit();
-      infoSheet.getColumn(5).numFmt = "yyyy-mm-dd";
-      for (const p of projects) {
-        infoSheet.addRow([
-          p.id,
-          p.name,
-          p.description || "N/A",
-          `${p.owner.full_name} (${p.owner.email})`,
-          formatDateStr(p.created_at),
-        ]).commit();
-      }
+    const headerFill: ExcelJS.Fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF4F46E5" }, // ProjectFlow brand Indigo
+    };
+
+    const headerFont: Partial<ExcelJS.Font> = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+      size: 11,
+      name: "Calibri",
+    };
+
+    const applyHeaderStyle = (sheet: ExcelJS.Worksheet) => {
+      const headerRow = sheet.getRow(1);
+      headerRow.height = 26;
+      headerRow.eachCell((cell) => {
+        cell.fill = headerFill;
+        cell.font = headerFont;
+        cell.alignment = { vertical: "middle", horizontal: "left" };
+      });
+    };
+
+    // 1. Project Info Sheet - Consistent tabular format for 1 or multiple projects
+    const infoSheet = workbook.addWorksheet("Project Info", {
+      views: [{ showGridLines: true }],
+    });
+    infoSheet.columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Project Name", key: "name", width: 32 },
+      { header: "Description", key: "description", width: 50 },
+      { header: "Owner", key: "owner", width: 35 },
+      { header: "Created Date", key: "created_at", width: 18, style: { numFmt: "yyyy-mm-dd" } },
+    ];
+    applyHeaderStyle(infoSheet);
+
+    for (const p of projects) {
+      const row = infoSheet.addRow({
+        id: p.id,
+        name: p.name,
+        description: p.description || "N/A",
+        owner: p.owner ? `${p.owner.full_name} (${p.owner.email})` : "N/A",
+        created_at: formatDateStr(p.created_at),
+      });
+      row.height = 22;
+      row.alignment = { vertical: "middle", horizontal: "left" };
     }
-    infoSheet.commit();
 
     // 2. Sprints Sheet
-    const sprintSheet = workbook.addWorksheet("Sprints");
-    sprintSheet.addRow(["ID", "Project Name", "Sprint Name", "Start Date", "End Date", "Status"]).commit();
-    sprintSheet.getColumn(4).numFmt = "yyyy-mm-dd";
-    sprintSheet.getColumn(5).numFmt = "yyyy-mm-dd";
+    const sprintSheet = workbook.addWorksheet("Sprints", {
+      views: [{ showGridLines: true }],
+    });
+    sprintSheet.columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Project Name", key: "project_name", width: 28 },
+      { header: "Sprint Name", key: "name", width: 30 },
+      { header: "Start Date", key: "start_date", width: 18, style: { numFmt: "yyyy-mm-dd" } },
+      { header: "End Date", key: "end_date", width: 18, style: { numFmt: "yyyy-mm-dd" } },
+      { header: "Status", key: "status", width: 18 },
+    ];
+    applyHeaderStyle(sprintSheet);
+
     const sprints = await prisma.sprint.findMany({
       where: { project_id: { in: projects.map((p) => p.id) } },
       include: { project: { select: { name: true } } },
       orderBy: [{ project_id: "asc" }, { id: "asc" }],
     });
+
     const nowTs = Date.now();
     for (const s of sprints) {
       let sprintStatus = s.status;
@@ -307,89 +339,72 @@ export const projectExcelService = {
         }
       }
 
-      sprintSheet
-        .addRow([
-          s.id,
-          s.project?.name || `Project #${s.project_id}`,
-          s.name || `Sprint #${s.id}`,
-          formatDateStr(s.start_date),
-          formatDateStr(s.end_date),
-          sprintStatus,
-        ])
-        .commit();
+      const row = sprintSheet.addRow({
+        id: s.id,
+        project_name: s.project?.name || `Project #${s.project_id}`,
+        name: s.name || `Sprint #${s.id}`,
+        start_date: formatDateStr(s.start_date),
+        end_date: formatDateStr(s.end_date),
+        status: sprintStatus,
+      });
+      row.height = 22;
+      row.alignment = { vertical: "middle", horizontal: "left" };
     }
-    sprintSheet.commit();
 
-    // 3. Tickets Sheet (Streaming chunk-by-chunk with cursor pagination across all selected projects)
-    const ticketSheet = workbook.addWorksheet("Tickets");
-    ticketSheet
-      .addRow([
-        "ID",
-        "Project Name",
-        "Title",
-        "Description",
-        "Status",
-        "Priority",
-        "Estimation",
-        "Sprint Name",
-        "Assignee Name",
-        "Assignee Email",
-        "Author",
-        "Created At",
-      ])
-      .commit();
-    ticketSheet.getColumn(12).numFmt = "yyyy-mm-dd";
+    // 3. Tickets Sheet
+    const ticketSheet = workbook.addWorksheet("Tickets", {
+      views: [{ showGridLines: true }],
+    });
+    ticketSheet.columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Project Name", key: "project_name", width: 28 },
+      { header: "Title", key: "title", width: 36 },
+      { header: "Description", key: "description", width: 45 },
+      { header: "Status", key: "status", width: 16 },
+      { header: "Priority", key: "priority", width: 14 },
+      { header: "Estimation", key: "estimation", width: 14 },
+      { header: "Sprint Name", key: "sprint_name", width: 26 },
+      { header: "Assignee Name", key: "assignee_name", width: 22 },
+      { header: "Assignee Email", key: "assignee_email", width: 30 },
+      { header: "Author", key: "author", width: 22 },
+      { header: "Created At", key: "created_at", width: 18, style: { numFmt: "yyyy-mm-dd" } },
+    ];
+    applyHeaderStyle(ticketSheet);
 
-    const CHUNK_SIZE = 500;
     const projectMap = new Map<number, string>();
     projects.forEach((p) => projectMap.set(p.id, p.name));
 
-    let cursorId: number | undefined = undefined;
-    let hasMore = true;
+    const tickets: any[] = await prisma.ticket.findMany({
+      where: { project_id: { in: projects.map((p) => p.id) } },
+      orderBy: [{ project_id: "asc" }, { id: "asc" }],
+      include: {
+        sprint: { select: { name: true, id: true } },
+        assignee: { select: { full_name: true, email: true } },
+        author: { select: { full_name: true, email: true } },
+      },
+    });
 
-    while (hasMore) {
-      const tickets: any[] = await prisma.ticket.findMany({
-        where: { project_id: { in: projects.map((p) => p.id) } },
-        take: CHUNK_SIZE,
-        skip: cursorId ? 1 : 0,
-        cursor: cursorId ? { id: cursorId } : undefined,
-        orderBy: { id: "asc" },
-        include: {
-          sprint: { select: { name: true, id: true } },
-          assignee: { select: { full_name: true, email: true } },
-          author: { select: { full_name: true, email: true } },
-        },
+    for (const t of tickets) {
+      const row = ticketSheet.addRow({
+        id: t.id,
+        project_name: projectMap.get(t.project_id) || `Project #${t.project_id}`,
+        title: t.title,
+        description: t.description || "",
+        status: t.status,
+        priority: t.priority,
+        estimation: t.estimation || "",
+        sprint_name: t.sprint?.name || (t.sprint_id ? `Sprint #${t.sprint_id}` : "Backlog"),
+        assignee_name: t.assignee?.full_name || "Unassigned",
+        assignee_email: t.assignee?.email || "",
+        author: t.author?.full_name || "",
+        created_at: formatDateStr(t.created_at),
       });
-
-      if (tickets.length === 0) break;
-
-      for (const t of tickets) {
-        ticketSheet
-          .addRow([
-            t.id,
-            projectMap.get(t.project_id) || `Project #${t.project_id}`,
-            t.title,
-            t.description || "",
-            t.status,
-            t.priority,
-            t.estimation || "",
-            t.sprint?.name || (t.sprint_id ? `Sprint #${t.sprint_id}` : "Backlog"),
-            t.assignee?.full_name || "Unassigned",
-            t.assignee?.email || "",
-            t.author?.full_name || "",
-            formatDateStr(t.created_at),
-          ])
-          .commit();
-      }
-
-      cursorId = tickets[tickets.length - 1].id;
-      if (tickets.length < CHUNK_SIZE) {
-        hasMore = false;
-      }
+      row.height = 22;
+      row.alignment = { vertical: "middle", horizontal: "left" };
     }
 
-    ticketSheet.commit();
-    await workbook.commit();
+    await workbook.xlsx.write(res);
+    res.end();
   },
 
   async exportProject(projectId: number, userId: number, res: Response): Promise<void> {
@@ -419,10 +434,10 @@ export const projectExcelService = {
 
       const infoSheet = workbook.getWorksheet("Project Info");
       if (infoSheet) {
-        // Check row 2 (header in row 1, values in row 2) or Property/Value style
+        // Check row 1 for Property/Value key-value style or column headers
         const row1Prop = String(infoSheet.getRow(1).getCell(1).value || "").toLowerCase();
         if (row1Prop.includes("property")) {
-          // Key-Value format
+          // Key-Value format (Property | Value)
           infoSheet.eachRow((r, rowNumber) => {
             if (rowNumber > 1) {
               const k = String(r.getCell(1).value || "").toLowerCase();
@@ -432,9 +447,16 @@ export const projectExcelService = {
             }
           });
         } else {
-          // Column header format
-          const nameVal = infoSheet.getRow(2).getCell(1).value;
-          const descVal = infoSheet.getRow(2).getCell(2).value;
+          // Tabular column headers format: detect name and description column dynamically
+          let nameCol = 1;
+          let descCol = 2;
+          infoSheet.getRow(1).eachCell((cell, colNumber) => {
+            const h = String(cell.value || "").toLowerCase();
+            if (h.includes("name") && !h.includes("sprint")) nameCol = colNumber;
+            if (h.includes("desc")) descCol = colNumber;
+          });
+          const nameVal = infoSheet.getRow(2).getCell(nameCol).value;
+          const descVal = infoSheet.getRow(2).getCell(descCol).value;
           if (nameVal) projectName = String(nameVal).trim();
           if (descVal) projectDesc = String(descVal).trim();
         }
@@ -551,7 +573,8 @@ export const projectExcelService = {
               else if (h.includes("prior")) ticketHeaderMap["priority"] = colNumber;
               else if (h.includes("estim")) ticketHeaderMap["estimation"] = colNumber;
               else if (h.includes("sprint")) ticketHeaderMap["sprint"] = colNumber;
-              else if (h.includes("email") || h.includes("assignee")) ticketHeaderMap["assignee"] = colNumber;
+              else if (h.includes("email")) ticketHeaderMap["assignee"] = colNumber;
+              else if (h.includes("assignee") && !ticketHeaderMap["assignee"]) ticketHeaderMap["assignee"] = colNumber;
             });
             return;
           }
