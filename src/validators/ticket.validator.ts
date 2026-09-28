@@ -31,8 +31,8 @@ export const createTicketValidator = [
     .withMessage("Sprint ID must be a positive integer or null"),
   body("assigneeId")
     .optional({ nullable: true })
-    .isInt({ min: 1 })
-    .withMessage("Assignee ID must be a positive integer"),
+    .custom((value) => value === null || (Number.isInteger(value) && value > 0))
+    .withMessage("Assignee ID must be a positive integer or null"),
   body("authorId")
     .optional({ nullable: true })
     .isInt({ min: 1 })

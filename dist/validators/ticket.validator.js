@@ -34,8 +34,8 @@ exports.createTicketValidator = [
         .withMessage("Sprint ID must be a positive integer or null"),
     (0, express_validator_1.body)("assigneeId")
         .optional({ nullable: true })
-        .isInt({ min: 1 })
-        .withMessage("Assignee ID must be a positive integer"),
+        .custom((value) => value === null || (Number.isInteger(value) && value > 0))
+        .withMessage("Assignee ID must be a positive integer or null"),
     (0, express_validator_1.body)("authorId")
         .optional({ nullable: true })
         .isInt({ min: 1 })

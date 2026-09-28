@@ -18,14 +18,14 @@ export declare const ticketService: {
         title: string;
         priority: string;
         estimation: string | null;
-        author_id: number;
-        assignee_id: number | null;
-        position: number;
         author: {
             id: number;
             email: string;
             full_name: string;
         };
+        author_id: number;
+        assignee_id: number | null;
+        position: number;
         assignee: {
             id: number;
             email: string;
@@ -56,14 +56,14 @@ export declare const ticketService: {
         title: string;
         priority: string;
         estimation: string | null;
-        author_id: number;
-        assignee_id: number | null;
-        position: number;
         author: {
             id: number;
             email: string;
             full_name: string;
         };
+        author_id: number;
+        assignee_id: number | null;
+        position: number;
         assignee: {
             id: number;
             email: string;
@@ -88,14 +88,14 @@ export declare const ticketService: {
         sprint_id: number | null;
         title: string;
         estimation: string | null;
-        author_id: number;
-        assignee_id: number | null;
-        position: number;
         author: {
             id: number;
             email: string;
             full_name: string;
         };
+        author_id: number;
+        assignee_id: number | null;
+        position: number;
         assignee: {
             id: number;
             email: string;
@@ -139,14 +139,14 @@ export declare const ticketService: {
         sprint_id: number | null;
         title: string;
         estimation: string | null;
-        author_id: number;
-        assignee_id: number | null;
-        position: number;
         author: {
             id: number;
             email: string;
             full_name: string;
         };
+        author_id: number;
+        assignee_id: number | null;
+        position: number;
         assignee: {
             id: number;
             email: string;
