@@ -144,7 +144,7 @@ export const projectExcelService = {
       name: "Sprint 1 - Foundation",
       start_date: "2026-10-01",
       end_date: "2026-10-14",
-      status: "ACTIVE",
+      status: "PLANNED",
     });
     sprintSheet.addRow({
       name: "Sprint 2 - Payment Gateway",
@@ -170,7 +170,7 @@ export const projectExcelService = {
     ticketSheet.addRow({
       title: "Implement OAuth Login API",
       description: "Support Google and GitHub OAuth authentication flow.",
-      status: "DONE",
+      status: "TODO",
       priority: "HIGH",
       estimation: "2d",
       sprint_name: "Sprint 1 - Foundation",
