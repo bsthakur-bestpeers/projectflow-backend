@@ -134,6 +134,46 @@ function cleanDescriptionText(description) {
         .replace(/\s+/g, " ")
         .trim();
 }
+/**
+ * Automatically adjusts column widths based on maximum header and cell content length.
+ * Prevents text from being truncated or hidden in Excel / spreadsheet viewers.
+ */
+function autoFitWorksheetColumns(sheet, minWidths = {}) {
+    sheet.columns.forEach((column) => {
+        let maxLen = column.header ? String(column.header).length : 10;
+        if (column.eachCell) {
+            column.eachCell({ includeEmpty: false }, (cell) => {
+                let valStr = "";
+                if (cell.value !== null && cell.value !== undefined) {
+                    if (typeof cell.value === "object") {
+                        if ("text" in cell.value)
+                            valStr = String(cell.value.text);
+                        else if ("result" in cell.value)
+                            valStr = String(cell.value.result);
+                        else if (cell.value instanceof Date)
+                            valStr = cell.value.toISOString().slice(0, 10);
+                        else
+                            valStr = "";
+                    }
+                    else {
+                        valStr = String(cell.value);
+                    }
+                }
+                if (valStr) {
+                    const firstLine = valStr.split("\n")[0];
+                    if (firstLine.length > maxLen) {
+                        maxLen = firstLine.length;
+                    }
+                }
+            });
+        }
+        const key = column.key || "";
+        const minW = minWidths[key] || 16;
+        // Calculate required width: Excel font requires ~1.25x character width + safety padding
+        const neededWidth = Math.ceil(maxLen * 1.25) + 4;
+        column.width = Math.min(Math.max(neededWidth, column.width || minW, minW), 80);
+    });
+}
 exports.projectExcelService = {
     /**
      * Generates and streams a downloadable sample XLSX template with instructions & sample data.
@@ -173,53 +213,61 @@ exports.projectExcelService = {
             views: [{ showGridLines: true }],
         });
         infoSheet.columns = [
-            { header: "Project Name", key: "name", width: 32 },
-            { header: "Description", key: "description", width: 50 },
+            { header: "Project Name", key: "name", width: 36 },
+            { header: "Description", key: "description", width: 65 },
         ];
         applyHeaderStyle(infoSheet);
-        infoSheet.addRow({
+        const infoRow = infoSheet.addRow({
             name: "Sample Fintech Platform",
             description: "Core banking platform modern architecture with microservices.",
         });
+        infoRow.height = 22;
+        infoRow.alignment = { vertical: "middle", horizontal: "left" };
+        autoFitWorksheetColumns(infoSheet);
         // 2. Sprints Sheet - project specific sprints (no redundant Project Name column)
         const sprintSheet = workbook.addWorksheet("Sprints", {
             views: [{ showGridLines: true }],
         });
         sprintSheet.columns = [
-            { header: "Sprint Name", key: "name", width: 30 },
-            { header: "Start Date (YYYY-MM-DD)", key: "start_date", width: 25, style: { numFmt: "yyyy-mm-dd" } },
-            { header: "End Date (YYYY-MM-DD)", key: "end_date", width: 25, style: { numFmt: "yyyy-mm-dd" } },
-            { header: "Status (PLANNED / ACTIVE / COMPLETED)", key: "status", width: 35 },
+            { header: "Sprint Name", key: "name", width: 35 },
+            { header: "Start Date (YYYY-MM-DD)", key: "start_date", width: 30, style: { numFmt: "yyyy-mm-dd" } },
+            { header: "End Date (YYYY-MM-DD)", key: "end_date", width: 30, style: { numFmt: "yyyy-mm-dd" } },
+            { header: "Status (PLANNED / ACTIVE / COMPLETED)", key: "status", width: 48 },
         ];
         applyHeaderStyle(sprintSheet);
-        sprintSheet.addRow({
+        const spRow1 = sprintSheet.addRow({
             name: "Sprint 1 - Foundation",
             start_date: "2026-10-01",
             end_date: "2026-10-14",
             status: "PLANNED",
         });
-        sprintSheet.addRow({
+        spRow1.height = 22;
+        spRow1.alignment = { vertical: "middle", horizontal: "left" };
+        const spRow2 = sprintSheet.addRow({
             name: "Sprint 2 - Payment Gateway",
             start_date: "2026-10-15",
             end_date: "2026-10-28",
             status: "PLANNED",
         });
+        spRow2.height = 22;
+        spRow2.alignment = { vertical: "middle", horizontal: "left" };
+        autoFitWorksheetColumns(sprintSheet);
         // 3. Tickets Sheet - project specific tickets (no redundant Project Name column)
         const ticketSheet = workbook.addWorksheet("Tickets", {
             views: [{ showGridLines: true }],
         });
         ticketSheet.columns = [
-            { header: "Title", key: "title", width: 35 },
-            { header: "Description", key: "description", width: 45 },
-            { header: "Attachment", key: "attachment", width: 45 },
-            { header: "Status (TODO / IN_PROGRESS / IN_REVIEW / DONE)", key: "status", width: 40 },
-            { header: "Priority (HIGH / MEDIUM / LOW)", key: "priority", width: 30 },
-            { header: "Estimation (e.g. 2h, 1.5d)", key: "estimation", width: 25 },
-            { header: "Sprint Name (Leave empty for Backlog)", key: "sprint_name", width: 35 },
-            { header: "Assignee Email", key: "assignee_email", width: 30 },
+            { header: "Title", key: "title", width: 40 },
+            { header: "Description", key: "description", width: 60 },
+            { header: "Attachment", key: "attachment", width: 60 },
+            { header: "Status (TODO / IN_PROGRESS / IN_REVIEW / DONE)", key: "status", width: 60 },
+            { header: "Priority (HIGH / MEDIUM / LOW)", key: "priority", width: 42 },
+            { header: "Estimation (e.g. 2h, 1.5d)", key: "estimation", width: 32 },
+            { header: "Sprint Name (Leave empty for Backlog)", key: "sprint_name", width: 48 },
+            { header: "Assignee Email", key: "assignee_email", width: 32 },
         ];
         applyHeaderStyle(ticketSheet);
-        ticketSheet.addRow({
+        const tkRow1 = ticketSheet.addRow({
             title: "Implement OAuth Login API",
             description: "Support Google and GitHub OAuth authentication flow.",
             attachment: "https://projectflow.dev/uploads/oauth-architecture-spec.png",
@@ -229,7 +277,9 @@ exports.projectExcelService = {
             sprint_name: "Sprint 1 - Foundation",
             assignee_email: "alice@projectflow.dev",
         });
-        ticketSheet.addRow({
+        tkRow1.height = 22;
+        tkRow1.alignment = { vertical: "middle", horizontal: "left" };
+        const tkRow2 = ticketSheet.addRow({
             title: "Write Swagger API Documentation",
             description: "Complete OpenAPI 3.0 documentation for all public endpoints.",
             attachment: "",
@@ -239,7 +289,9 @@ exports.projectExcelService = {
             sprint_name: "",
             assignee_email: "",
         });
-        ticketSheet.addRow({
+        tkRow2.height = 22;
+        tkRow2.alignment = { vertical: "middle", horizontal: "left" };
+        const tkRow3 = ticketSheet.addRow({
             title: "Build Kanban Board Drag-and-Drop",
             description: "Smooth dnd-kit columns with optimistic updates.",
             attachment: "https://projectflow.dev/uploads/kanban-wireframe.png",
@@ -249,6 +301,9 @@ exports.projectExcelService = {
             sprint_name: "Sprint 2 - Payment Gateway",
             assignee_email: "",
         });
+        tkRow3.height = 22;
+        tkRow3.alignment = { vertical: "middle", horizontal: "left" };
+        autoFitWorksheetColumns(ticketSheet);
         await workbook.xlsx.write(res);
         res.end();
     },
@@ -302,11 +357,11 @@ exports.projectExcelService = {
             views: [{ showGridLines: true }],
         });
         infoSheet.columns = [
-            { header: "ID", key: "id", width: 10 },
-            { header: "Project Name", key: "name", width: 32 },
-            { header: "Description", key: "description", width: 50 },
-            { header: "Owner", key: "owner", width: 35 },
-            { header: "Created Date", key: "created_at", width: 18, style: { numFmt: "yyyy-mm-dd" } },
+            { header: "ID", key: "id", width: 12 },
+            { header: "Project Name", key: "name", width: 36 },
+            { header: "Description", key: "description", width: 60 },
+            { header: "Owner", key: "owner", width: 38 },
+            { header: "Created Date", key: "created_at", width: 20, style: { numFmt: "yyyy-mm-dd" } },
         ];
         applyHeaderStyle(infoSheet);
         const infoRow = infoSheet.addRow({
@@ -318,16 +373,17 @@ exports.projectExcelService = {
         });
         infoRow.height = 22;
         infoRow.alignment = { vertical: "middle", horizontal: "left" };
+        autoFitWorksheetColumns(infoSheet);
         // 2. Sprints Sheet - sprints for this specific project (no redundant Project Name column)
         const sprintSheet = workbook.addWorksheet("Sprints", {
             views: [{ showGridLines: true }],
         });
         sprintSheet.columns = [
-            { header: "ID", key: "id", width: 10 },
-            { header: "Sprint Name", key: "name", width: 30 },
-            { header: "Start Date", key: "start_date", width: 18, style: { numFmt: "yyyy-mm-dd" } },
-            { header: "End Date", key: "end_date", width: 18, style: { numFmt: "yyyy-mm-dd" } },
-            { header: "Status", key: "status", width: 18 },
+            { header: "ID", key: "id", width: 12 },
+            { header: "Sprint Name", key: "name", width: 35 },
+            { header: "Start Date", key: "start_date", width: 20, style: { numFmt: "yyyy-mm-dd" } },
+            { header: "End Date", key: "end_date", width: 20, style: { numFmt: "yyyy-mm-dd" } },
+            { header: "Status", key: "status", width: 20 },
         ];
         applyHeaderStyle(sprintSheet);
         const sprints = await prisma_1.default.sprint.findMany({
@@ -360,23 +416,24 @@ exports.projectExcelService = {
             row.height = 22;
             row.alignment = { vertical: "middle", horizontal: "left" };
         }
+        autoFitWorksheetColumns(sprintSheet);
         // 3. Tickets Sheet - tickets for this specific project (no redundant Project Name column)
         const ticketSheet = workbook.addWorksheet("Tickets", {
             views: [{ showGridLines: true }],
         });
         ticketSheet.columns = [
-            { header: "ID", key: "id", width: 10 },
-            { header: "Title", key: "title", width: 36 },
-            { header: "Description", key: "description", width: 45 },
-            { header: "Attachment", key: "attachment", width: 45 },
-            { header: "Status", key: "status", width: 16 },
-            { header: "Priority", key: "priority", width: 14 },
-            { header: "Estimation", key: "estimation", width: 14 },
-            { header: "Sprint Name", key: "sprint_name", width: 26 },
-            { header: "Assignee Name", key: "assignee_name", width: 22 },
-            { header: "Assignee Email", key: "assignee_email", width: 30 },
-            { header: "Author", key: "author", width: 22 },
-            { header: "Created At", key: "created_at", width: 18, style: { numFmt: "yyyy-mm-dd" } },
+            { header: "ID", key: "id", width: 12 },
+            { header: "Title", key: "title", width: 40 },
+            { header: "Description", key: "description", width: 60 },
+            { header: "Attachment", key: "attachment", width: 55 },
+            { header: "Status", key: "status", width: 20 },
+            { header: "Priority", key: "priority", width: 20 },
+            { header: "Estimation", key: "estimation", width: 20 },
+            { header: "Sprint Name", key: "sprint_name", width: 32 },
+            { header: "Assignee Name", key: "assignee_name", width: 28 },
+            { header: "Assignee Email", key: "assignee_email", width: 32 },
+            { header: "Author", key: "author", width: 28 },
+            { header: "Created At", key: "created_at", width: 20, style: { numFmt: "yyyy-mm-dd" } },
         ];
         applyHeaderStyle(ticketSheet);
         const tickets = await prisma_1.default.ticket.findMany({
@@ -406,6 +463,7 @@ exports.projectExcelService = {
             row.height = 22;
             row.alignment = { vertical: "middle", horizontal: "left" };
         }
+        autoFitWorksheetColumns(ticketSheet);
         await workbook.xlsx.write(res);
         res.end();
     },
